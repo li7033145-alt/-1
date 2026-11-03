@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-coral: #FF5A4F;
+    --bg-page: #F7F7F5;
+    --bg-card: #FFFFFF;
+    --text-primary: #171717;
+    --text-body: #514744;
+    --text-muted: #9A8984;
+    --border-divider: #F0EEEC;
+    --bg-coral-light: #FFF0ED;
+    --bg-disabled: #EAE9E7;
+    --text-disabled: #99938F;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+    background-color: #F7F7F5;
+    color: #171717;
+    -webkit-tap-highlight-color: transparent;
+  }
+  * {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  *::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}

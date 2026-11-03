@@ -1,0 +1,6 @@
+{
+  "name": "一场 - 校园活动发现与报名平台",
+  "description": "校园里，总有一场值得去。为高校大学生提供校园活动发现、活动报名、活动发布和个人活动管理服务。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
