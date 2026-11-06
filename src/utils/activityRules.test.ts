@@ -125,11 +125,12 @@ test('applyRegistration increments registeredCount, prevents exceeding capacity,
 
 test('filterActivities filters by campus, category, keyword, and status accurately', () => {
   const list: Activity[] = [
-    makeBaseActivity({ id: '1', title: '校园音乐节', category: '文体', registeredCount: 80 }),
+    makeBaseActivity({ id: '1', title: '校园音乐节', category: '文体', subCampus: '清远校区', registeredCount: 80 }),
     makeBaseActivity({
       id: '2',
       title: '校园摄影展',
       category: '展览',
+      subCampus: '清远校区',
       startTime: '2026-10-10T10:00:00',
       endTime: '2026-10-18T18:00:00',
       registrationDeadline: '2026-10-18T12:00:00',
@@ -138,6 +139,7 @@ test('filterActivities filters by campus, category, keyword, and status accurate
       id: '3',
       title: '创意市集',
       category: '社团',
+      subCampus: '广州校区',
       registeredCount: 150,
       capacity: 150,
     }),
@@ -146,6 +148,7 @@ test('filterActivities filters by campus, category, keyword, and status accurate
       title: '跨校讲座',
       category: '讲座',
       campus: '华南理工大学',
+      subCampus: '大学城校区',
     }),
   ];
 
@@ -153,6 +156,7 @@ test('filterActivities filters by campus, category, keyword, and status accurate
     list,
     {
       campus: '广东建设职业技术学院',
+      subCampus: '全部校区',
       category: '全部',
       keyword: '',
       timeRange: 'all',
@@ -161,6 +165,21 @@ test('filterActivities filters by campus, category, keyword, and status accurate
     REF_NOW
   );
   assert.equal(byCampus.length, 3);
+
+  const bySubCampusGz = filterActivities(
+    list,
+    {
+      campus: '广东建设职业技术学院',
+      subCampus: '广州校区',
+      category: '全部',
+      keyword: '',
+      timeRange: 'all',
+      statusFilter: 'all',
+    },
+    REF_NOW
+  );
+  assert.equal(bySubCampusGz.length, 1);
+  assert.equal(bySubCampusGz[0].id, '3');
 
   const byCategory = filterActivities(
     list,
@@ -226,3 +245,105 @@ test('validatePublishForm validates required fields and date ordering', () => {
   assert.ok(badResult.errors.capacity);
   assert.ok(badResult.errors.endDate);
 });
+
+test('toggleJoinBuddyPost and filterBuddyPosts handle buddy recruitment accurately', async () => {
+  const { toggleJoinBuddyPost, filterBuddyPosts } = await import('./activityRules');
+  const samplePost: import('../types/activity').BuddyPost = {
+    id: 'b-1',
+    activityId: 'act-music-2026',
+    activityTitle: '校园音乐节',
+    activityStartTime: '2026-11-06T18:30:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    authorName: '陈梓轩',
+    authorDepartment: '土木工程学院',
+    authorGrade: '2024级',
+    tag: '同去现场',
+    title: '草坪前排听摇滚找2个搭子',
+    description: '带了野餐垫和荧光棒，一起去占前排位置合唱！',
+    meetingPoint: '清远校区南区草坪西侧入口',
+    maxCount: 3,
+    currentCount: 2,
+    participants: ['陈梓轩', '何嘉敏'],
+    contactCode: '微信群口令：音乐节前排小分队',
+    createdAt: '2026-11-03T10:00:00',
+    isJoined: false,
+  };
+
+  // Join increments count and adds user
+  const joined = toggleJoinBuddyPost(samplePost, '林晓阳');
+  assert.equal(joined.isJoined, true);
+  assert.equal(joined.currentCount, 3);
+  assert.ok(joined.participants.includes('林晓阳'));
+
+  // Leave decrements count and removes user
+  const left = toggleJoinBuddyPost(joined, '林晓阳');
+  assert.equal(left.isJoined, false);
+  assert.equal(left.currentCount, 2);
+
+  // Filter by subCampus and onlyOpen
+  const posts = [
+    samplePost,
+    {
+      ...samplePost,
+      id: 'b-2',
+      subCampus: '广州校区',
+      tag: '组队参赛' as const,
+      currentCount: 3,
+      maxCount: 3,
+    },
+  ];
+
+  const openOnly = filterBuddyPosts(posts, {
+    campus: '广东建设职业技术学院',
+    subCampus: '全部校区',
+    onlyOpen: true,
+  });
+  assert.equal(openOnly.length, 1);
+  assert.equal(openOnly[0].id, 'b-1');
+
+  const gzOnly = filterBuddyPosts(posts, {
+    campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+  });
+  assert.equal(gzOnly.length, 1);
+  assert.equal(gzOnly[0].id, 'b-2');
+});
+
+test('getDailyCuratedActivities recommends 3 activities matching sub-campus and interest preferences', async () => {
+  const { getDailyCuratedActivities } = await import('./activityRules');
+  const { INITIAL_ACTIVITIES, DEMO_NOW_ISO } = await import('../data/initialData');
+
+  // 1. Qingyuan sub-campus with ['艺术', '体育', '讲座']
+  const qyRecs = getDailyCuratedActivities(INITIAL_ACTIVITIES, {
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    interests: ['艺术', '体育', '讲座'],
+    department: '建筑信息工程学院 · 软件技术',
+    nowIso: DEMO_NOW_ISO,
+    limit: 3,
+  });
+
+  assert.equal(qyRecs.length, 3);
+  assert.ok(qyRecs.every((r) => r.activity.subCampus === '清远校区'));
+  assert.equal(qyRecs[0].primaryInterest, '艺术');
+  assert.equal(qyRecs[1].primaryInterest, '体育');
+  assert.equal(qyRecs[2].primaryInterest, '讲座');
+
+  // 2. Guangzhou sub-campus with ['艺术', '体育', '讲座']
+  const gzRecs = getDailyCuratedActivities(INITIAL_ACTIVITIES, {
+    campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    interests: ['艺术', '体育', '讲座'],
+    department: '建筑信息工程学院 · 软件技术',
+    nowIso: DEMO_NOW_ISO,
+    limit: 3,
+  });
+
+  assert.equal(gzRecs.length, 3);
+  assert.ok(gzRecs.every((r) => r.activity.subCampus === '广州校区'));
+  assert.equal(gzRecs[0].primaryInterest, '艺术');
+  assert.equal(gzRecs[1].primaryInterest, '体育');
+  assert.equal(gzRecs[2].primaryInterest, '讲座');
+});
+

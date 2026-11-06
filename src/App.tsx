@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Layers, Smartphone } from 'lucide-react';
 import {
   Activity,
   ActivityCategory,
+  BuddyPost,
+  BuddyTag,
+  InterestPreference,
   PrimaryTab,
   PublishFormData,
   StatusFilter,
@@ -11,11 +13,17 @@ import {
 } from './types/activity';
 import {
   DEFAULT_CAMPUS,
+  DEFAULT_SUB_CAMPUS,
   DEMO_NOW_ISO,
   INITIAL_ACTIVITIES,
+  INITIAL_BUDDY_POSTS,
   INITIAL_USER_PROFILE,
 } from './data/initialData';
-import { applyRegistration, computeActivityStatus } from './utils/activityRules';
+import {
+  applyRegistration,
+  computeActivityStatus,
+  toggleJoinBuddyPost,
+} from './utils/activityRules';
 import { BottomNav } from './components/BottomNav';
 import { CampusSelectorPage } from './components/CampusSelectorPage';
 import { HomePage } from './components/HomePage';
@@ -23,12 +31,13 @@ import { ActivitiesPage } from './components/ActivitiesPage';
 import { ActivityDetailPage } from './components/ActivityDetailPage';
 import { PublishPage } from './components/PublishPage';
 import { ProfilePage, ProfileSubPage } from './components/ProfilePage';
-import { IconDesignArtboard } from './components/OriginalNavIcons';
 
 const STORAGE_KEYS = {
-  ACTIVITIES: 'yichang_activities_v1',
-  PROFILE: 'yichang_profile_v1',
+  ACTIVITIES: 'yichang_activities_v3',
+  BUDDIES: 'yichang_buddies_v1',
+  PROFILE: 'yichang_profile_v2',
   CAMPUS: 'yichang_campus_v1',
+  SUB_CAMPUS: 'yichang_subcampus_v1',
   ONBOARDED: 'yichang_onboarded_v1',
 };
 
@@ -57,6 +66,14 @@ export default function App() {
     }
   });
 
+  const [currentSubCampus, setCurrentSubCampus] = useState<string>(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.SUB_CAMPUS) || DEFAULT_SUB_CAMPUS;
+    } catch {
+      return DEFAULT_SUB_CAMPUS;
+    }
+  });
+
   const [activities, setActivities] = useState<Activity[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVITIES);
@@ -68,6 +85,19 @@ export default function App() {
       // ignore storage error
     }
     return INITIAL_ACTIVITIES;
+  });
+
+  const [buddyPosts, setBuddyPosts] = useState<BuddyPost[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.BUDDIES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {
+      // ignore
+    }
+    return INITIAL_BUDDY_POSTS;
   });
 
   const [userProfile, setUserProfile] = useState<UserProfile>(() => {
@@ -82,6 +112,9 @@ export default function App() {
 
   // Navigation state
   const [activeTab, setActiveTab] = useState<PrimaryTab>('home');
+  const [activitiesViewMode, setActivitiesViewMode] = useState<'activities' | 'buddies'>(
+    'activities'
+  );
   const [showCampusModal, setShowCampusModal] = useState<boolean>(false);
   const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
   const [mobileShowArtboard, setMobileShowArtboard] = useState<boolean>(false);
@@ -116,6 +149,14 @@ export default function App() {
 
   useEffect(() => {
     try {
+      localStorage.setItem(STORAGE_KEYS.BUDDIES, JSON.stringify(buddyPosts));
+    } catch {
+      // ignore
+    }
+  }, [buddyPosts]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(STORAGE_KEYS.PROFILE, JSON.stringify(userProfile));
     } catch {
       // ignore
@@ -130,16 +171,39 @@ export default function App() {
     }
   }, [currentCampus]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.SUB_CAMPUS, currentSubCampus);
+    } catch {
+      // ignore
+    }
+  }, [currentSubCampus]);
+
   // Scroll to top when screen changes
   useEffect(() => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTop = 0;
     }
-  }, [activeTab, activeDetailId, showCampusModal, publishMode, profileSubPage, hasSelectedCampus, mobileShowArtboard]);
+  }, [
+    activeTab,
+    activitiesViewMode,
+    activeDetailId,
+    showCampusModal,
+    publishMode,
+    profileSubPage,
+    hasSelectedCampus,
+    mobileShowArtboard,
+  ]);
 
-  const handleSelectCampus = (campusName: string) => {
+  const handleSelectCampus = (campusName: string, subCampus?: string) => {
+    const nextSub = subCampus || DEFAULT_SUB_CAMPUS;
     setCurrentCampus(campusName);
-    setUserProfile((prev) => ({ ...prev, campus: campusName }));
+    setCurrentSubCampus(nextSub);
+    setUserProfile((prev) => ({
+      ...prev,
+      campus: campusName,
+      subCampus: nextSub !== '全部校区' ? nextSub : prev.subCampus,
+    }));
     setHasSelectedCampus(true);
     setShowCampusModal(false);
     try {
@@ -164,6 +228,7 @@ export default function App() {
   };
 
   const handleJumpToCategory = (category: ActivityCategory, focusSearch = false) => {
+    setActivitiesViewMode('activities');
     setSelectedCategory(category);
     setStatusFilter('all');
     setTimeRange('all');
@@ -174,10 +239,73 @@ export default function App() {
     setActiveTab('activities');
   };
 
+  const handleJumpToBuddySquare = () => {
+    setActivitiesViewMode('buddies');
+    setActiveDetailId(null);
+    setActiveTab('activities');
+  };
+
   const handleToggleFavorite = (activityId: string) => {
     setActivities((prev) =>
       prev.map((act) => (act.id === activityId ? { ...act, favorite: !act.favorite } : act))
     );
+  };
+
+  const handleToggleJoinBuddy = (buddyId: string) => {
+    setBuddyPosts((prev) =>
+      prev.map((post) =>
+        post.id === buddyId ? toggleJoinBuddyPost(post, userProfile.nickname) : post
+      )
+    );
+  };
+
+  const handleToggleInterestPreference = (interest: InterestPreference) => {
+    setUserProfile((prev) => {
+      const current: InterestPreference[] =
+        prev.interests && prev.interests.length > 0
+          ? prev.interests
+          : ['艺术', '体育', '讲座'];
+      const exists = current.includes(interest);
+      if (exists && current.length === 1) {
+        // Keep at least one interest tag active for persona matching
+        return prev;
+      }
+      const nextInterests: InterestPreference[] = exists
+        ? current.filter((item) => item !== interest)
+        : [...current, interest];
+      return {
+        ...prev,
+        interests: nextInterests,
+      };
+    });
+  };
+
+  const handleCreateBuddyPost = (data: {
+    activityId: string;
+    activityTitle: string;
+    activityStartTime: string;
+    campus: string;
+    subCampus: string;
+    tag: BuddyTag;
+    title: string;
+    description: string;
+    meetingPoint: string;
+    maxCount: number;
+    contactCode: string;
+  }) => {
+    const newPost: BuddyPost = {
+      id: `buddy-${Date.now()}`,
+      ...data,
+      authorName: userProfile.nickname,
+      authorDepartment: userProfile.department,
+      authorGrade: userProfile.grade,
+      currentCount: 1,
+      participants: [userProfile.nickname],
+      createdAt: DEMO_NOW_ISO,
+      isJoined: true,
+      isMine: true,
+    };
+    setBuddyPosts((prev) => [newPost, ...prev]);
   };
 
   const handleRegisterSuccess = (
@@ -227,6 +355,9 @@ export default function App() {
       organizerInfo: `${currentCampus}学生自主发起活动`,
       favorite: false,
       campus: currentCampus,
+      subCampus:
+        formData.subCampus ||
+        (currentSubCampus !== '全部校区' ? currentSubCampus : '清远校区'),
       schedule: [
         {
           time: `${formData.startClock} - ${formData.endClock}`,
@@ -282,12 +413,16 @@ export default function App() {
 
   const handleResetDemoData = () => {
     setActivities(INITIAL_ACTIVITIES);
+    setBuddyPosts(INITIAL_BUDDY_POSTS);
     setUserProfile(INITIAL_USER_PROFILE);
     setCurrentCampus(DEFAULT_CAMPUS);
+    setCurrentSubCampus(DEFAULT_SUB_CAMPUS);
     try {
       localStorage.removeItem(STORAGE_KEYS.ACTIVITIES);
+      localStorage.removeItem(STORAGE_KEYS.BUDDIES);
       localStorage.removeItem(STORAGE_KEYS.PROFILE);
       localStorage.removeItem(STORAGE_KEYS.CAMPUS);
+      localStorage.removeItem(STORAGE_KEYS.SUB_CAMPUS);
     } catch {
       // ignore
     }
@@ -314,103 +449,124 @@ export default function App() {
           className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar relative"
         >
           {!hasSelectedCampus || showCampusModal ? (
-              <CampusSelectorPage
-                currentCampus={currentCampus}
-                isInitial={!hasSelectedCampus}
-                onSelectCampus={handleSelectCampus}
-                onClose={hasSelectedCampus ? () => setShowCampusModal(false) : undefined}
-              />
-            ) : activeDetailActivity ? (
-              <ActivityDetailPage
-                activity={activeDetailActivity}
-                userProfile={userProfile}
-                onBack={() => setActiveDetailId(null)}
-                onToggleFavorite={handleToggleFavorite}
-                onRegisterSuccess={handleRegisterSuccess}
-                onGoToMyRegistrations={() => {
-                  setActiveDetailId(null);
-                  setActiveTab('profile');
-                  setProfileSubPage('my-registrations');
-                }}
-              />
-            ) : activeTab === 'home' ? (
-              <HomePage
-                currentCampus={currentCampus}
-                activities={activities}
-                onOpenCampusSelector={() => setShowCampusModal(true)}
-                onSelectActivity={(id) => setActiveDetailId(id)}
-                onJumpToCategory={handleJumpToCategory}
-              />
-            ) : activeTab === 'activities' ? (
-              <ActivitiesPage
-                currentCampus={currentCampus}
-                activities={activities}
-                selectedCategory={selectedCategory}
-                searchKeyword={searchKeyword}
-                timeRange={timeRange}
-                statusFilter={statusFilter}
-                autoFocusSearch={autoFocusSearch}
-                onChangeCategory={setSelectedCategory}
-                onChangeSearch={setSearchKeyword}
-                onChangeTimeRange={setTimeRange}
-                onChangeStatusFilter={setStatusFilter}
-                onOpenCampusSelector={() => setShowCampusModal(true)}
-                onSelectActivity={(id) => setActiveDetailId(id)}
-                onClearAutoFocus={() => setAutoFocusSearch(false)}
-              />
-            ) : activeTab === 'publish' ? (
-              <PublishPage
-                currentCampus={currentCampus}
-                initialDraft={editingDraft}
-                mode={publishMode}
-                previewData={previewFormData}
-                lastSubmittedTitle={lastSubmittedTitle}
-                onSaveDraft={handleSaveDraft}
-                onProceedToPreview={(data) => {
-                  setPreviewFormData(data);
-                  setPublishMode('preview');
-                }}
-                onBackToEdit={() => setPublishMode('form')}
-                onSubmitPublish={handleSubmitPublish}
-                onGoToMyPublished={() => {
-                  setPublishMode('form');
-                  setActiveTab('profile');
-                  setProfileSubPage('my-published');
-                }}
-                onGoHome={() => {
-                  setPublishMode('form');
-                  setActiveTab('home');
-                }}
-              />
-            ) : (
-              <ProfilePage
-                userProfile={userProfile}
-                currentCampus={currentCampus}
-                activities={activities}
-                subPage={profileSubPage}
-                initialSettingsTab={settingsSection}
-                onChangeSubPage={(sub, sec) => {
-                  setProfileSubPage(sub);
-                  if (sec) setSettingsSection(sec);
-                }}
-                onOpenCampusSelector={() => setShowCampusModal(true)}
-                onSelectActivity={(id) => setActiveDetailId(id)}
-                onToggleFavorite={handleToggleFavorite}
-                onEditPublishedActivity={(formData) => {
-                  setEditingDraft(formData);
-                  setPublishMode('form');
-                  setActiveTab('publish');
-                }}
-                onSimulateApproveActivity={handleSimulateApprove}
-                onUpdateProfile={setUserProfile}
-                onResetDemoData={handleResetDemoData}
-                onGoToDiscover={() => {
-                  setProfileSubPage('main');
-                  setActiveTab('activities');
-                }}
-              />
-            )}
-          </main>
+            <CampusSelectorPage
+              currentCampus={currentCampus}
+              currentSubCampus={currentSubCampus}
+              isInitial={!hasSelectedCampus}
+              onSelectCampus={handleSelectCampus}
+              onClose={hasSelectedCampus ? () => setShowCampusModal(false) : undefined}
+            />
+          ) : activeDetailActivity ? (
+            <ActivityDetailPage
+              activity={activeDetailActivity}
+              userProfile={userProfile}
+              buddyPosts={buddyPosts}
+              onBack={() => setActiveDetailId(null)}
+              onToggleFavorite={handleToggleFavorite}
+              onRegisterSuccess={handleRegisterSuccess}
+              onToggleJoinBuddy={handleToggleJoinBuddy}
+              onCreateBuddyPost={handleCreateBuddyPost}
+              onGoToMyRegistrations={() => {
+                setActiveDetailId(null);
+                setActiveTab('profile');
+                setProfileSubPage('my-registrations');
+              }}
+            />
+          ) : activeTab === 'home' ? (
+            <HomePage
+              currentCampus={currentCampus}
+              currentSubCampus={currentSubCampus}
+              userProfile={userProfile}
+              activities={activities}
+              buddyPosts={buddyPosts}
+              onChangeSubCampus={setCurrentSubCampus}
+              onToggleInterestPreference={handleToggleInterestPreference}
+              onOpenCampusSelector={() => setShowCampusModal(true)}
+              onSelectActivity={(id) => setActiveDetailId(id)}
+              onJumpToCategory={handleJumpToCategory}
+              onJumpToBuddySquare={handleJumpToBuddySquare}
+              onToggleJoinBuddy={handleToggleJoinBuddy}
+            />
+          ) : activeTab === 'activities' ? (
+            <ActivitiesPage
+              currentCampus={currentCampus}
+              currentSubCampus={currentSubCampus}
+              activities={activities}
+              buddyPosts={buddyPosts}
+              viewMode={activitiesViewMode}
+              selectedCategory={selectedCategory}
+              searchKeyword={searchKeyword}
+              timeRange={timeRange}
+              statusFilter={statusFilter}
+              autoFocusSearch={autoFocusSearch}
+              onChangeViewMode={setActivitiesViewMode}
+              onChangeSubCampus={setCurrentSubCampus}
+              onChangeCategory={setSelectedCategory}
+              onChangeSearch={setSearchKeyword}
+              onChangeTimeRange={setTimeRange}
+              onChangeStatusFilter={setStatusFilter}
+              onOpenCampusSelector={() => setShowCampusModal(true)}
+              onSelectActivity={(id) => setActiveDetailId(id)}
+              onToggleJoinBuddy={handleToggleJoinBuddy}
+              onClearAutoFocus={() => setAutoFocusSearch(false)}
+            />
+          ) : activeTab === 'publish' ? (
+            <PublishPage
+              currentCampus={currentCampus}
+              currentSubCampus={currentSubCampus}
+              initialDraft={editingDraft}
+              mode={publishMode}
+              previewData={previewFormData}
+              lastSubmittedTitle={lastSubmittedTitle}
+              onSaveDraft={handleSaveDraft}
+              onProceedToPreview={(data) => {
+                setPreviewFormData(data);
+                setPublishMode('preview');
+              }}
+              onBackToEdit={() => setPublishMode('form')}
+              onSubmitPublish={handleSubmitPublish}
+              onGoToMyPublished={() => {
+                setPublishMode('form');
+                setActiveTab('profile');
+                setProfileSubPage('my-published');
+              }}
+              onGoHome={() => {
+                setPublishMode('form');
+                setActiveTab('home');
+              }}
+            />
+          ) : (
+            <ProfilePage
+              userProfile={userProfile}
+              currentCampus={currentCampus}
+              activities={activities}
+              buddyPosts={buddyPosts}
+              subPage={profileSubPage}
+              initialSettingsTab={settingsSection}
+              onChangeSubPage={(sub, sec) => {
+                setProfileSubPage(sub);
+                if (sec) setSettingsSection(sec);
+              }}
+              onOpenCampusSelector={() => setShowCampusModal(true)}
+              onSelectActivity={(id) => setActiveDetailId(id)}
+              onToggleFavorite={handleToggleFavorite}
+              onToggleJoinBuddy={handleToggleJoinBuddy}
+              onEditPublishedActivity={(formData) => {
+                setEditingDraft(formData);
+                setPublishMode('form');
+                setActiveTab('publish');
+              }}
+              onSimulateApproveActivity={handleSimulateApprove}
+              onUpdateProfile={setUserProfile}
+              onResetDemoData={handleResetDemoData}
+              onGoToDiscover={() => {
+                setProfileSubPage('main');
+                setActivitiesViewMode('buddies');
+                setActiveTab('activities');
+              }}
+            />
+          )}
+        </main>
 
         {/* 固定底部导航栏（应用全新原创几何+负形图标） */}
         {showBottomNav && (

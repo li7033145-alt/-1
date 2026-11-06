@@ -60,6 +60,7 @@ export interface Activity {
   status: ActivityStatus;
   favorite: boolean;
   campus: string;
+  subCampus?: string;
   schedule: ScheduleItem[];
   requirements: string[];
   contact: string;
@@ -81,10 +82,13 @@ export interface CampusInfo {
   city: string;
   district: string;
   shortName: string;
+  subCampuses: string[];
   activeCount: number;
   studentCountText: string;
   weatherText: string;
 }
+
+export type InterestPreference = '艺术' | '体育' | '讲座' | '音乐' | '竞赛' | '社团';
 
 export interface UserProfile {
   nickname: string;
@@ -94,6 +98,8 @@ export interface UserProfile {
   phone: string;
   bio: string;
   campus: string;
+  subCampus?: string;
+  interests?: InterestPreference[];
   notificationsEnabled: boolean;
   calendarSyncEnabled: boolean;
 }
@@ -112,11 +118,37 @@ export interface PublishFormData {
   regStartClock: string;
   regDeadlineDate: string;
   regDeadlineClock: string;
+  subCampus?: string;
   location: string;
   organizer: string;
   capacity: string;
   requirementsText: string;
   contact: string;
+}
+
+export type BuddyTag = '同去现场' | '组队参赛' | '约拍互勉' | '跨校区同行';
+
+export interface BuddyPost {
+  id: string;
+  activityId: string;
+  activityTitle: string;
+  activityStartTime: string;
+  campus: string;
+  subCampus: string;
+  authorName: string;
+  authorDepartment: string;
+  authorGrade: string;
+  tag: BuddyTag;
+  title: string;
+  description: string;
+  meetingPoint: string;
+  maxCount: number;
+  currentCount: number;
+  participants: string[];
+  contactCode: string;
+  createdAt: string;
+  isJoined?: boolean;
+  isMine?: boolean;
 }
 
 export type PrimaryTab = 'home' | 'activities' | 'publish' | 'profile';
@@ -128,6 +160,7 @@ export type SubView =
   | { type: 'publish-preview'; formData: PublishFormData }
   | { type: 'publish-success'; activityId: string; title: string }
   | { type: 'my-registrations' }
+  | { type: 'my-buddies' }
   | { type: 'my-favorites' }
   | { type: 'my-published' }
   | { type: 'profile-settings'; section?: 'profile' | 'settings' | 'about' };

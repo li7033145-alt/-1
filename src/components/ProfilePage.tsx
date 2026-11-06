@@ -15,9 +15,11 @@ import {
   RotateCcw,
   CheckCircle2,
   AlertCircle,
+  Users,
 } from 'lucide-react';
 import {
   Activity,
+  BuddyPost,
   PublishFormData,
   PublishReviewStatus,
   UserProfile,
@@ -34,6 +36,7 @@ import { CoverArtwork } from './CoverArtwork';
 export type ProfileSubPage =
   | 'main'
   | 'my-registrations'
+  | 'my-buddies'
   | 'my-favorites'
   | 'my-published'
   | 'profile-settings';
@@ -42,12 +45,14 @@ interface ProfilePageProps {
   userProfile: UserProfile;
   currentCampus: string;
   activities: Activity[];
+  buddyPosts: BuddyPost[];
   subPage: ProfileSubPage;
   initialSettingsTab?: 'profile' | 'settings' | 'about';
   onChangeSubPage: (page: ProfileSubPage, settingsTab?: 'profile' | 'settings' | 'about') => void;
   onOpenCampusSelector: () => void;
   onSelectActivity: (activityId: string) => void;
   onToggleFavorite: (activityId: string) => void;
+  onToggleJoinBuddy: (buddyId: string) => void;
   onEditPublishedActivity: (formData: PublishFormData) => void;
   onSimulateApproveActivity?: (activityId: string) => void;
   onUpdateProfile: (profile: UserProfile) => void;
@@ -59,12 +64,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   userProfile,
   currentCampus,
   activities,
+  buddyPosts,
   subPage,
   initialSettingsTab = 'profile',
   onChangeSubPage,
   onOpenCampusSelector,
   onSelectActivity,
   onToggleFavorite,
+  onToggleJoinBuddy,
   onEditPublishedActivity,
   onSimulateApproveActivity,
   onUpdateProfile,
@@ -72,6 +79,8 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
   onGoToDiscover,
 }) => {
   const [regTab, setRegTab] = useState<'all' | 'upcoming' | 'ongoing' | 'ended'>('all');
+  const [buddyTab, setBuddyTab] = useState<'all' | 'joined' | 'mine'>('all');
+  const [copiedBuddyId, setCopiedBuddyId] = useState<string | null>(null);
   const [pubTab, setPubTab] = useState<'all' | 'pending' | 'ongoing' | 'ended'>('all');
   const [settingsTab, setSettingsTab] = useState<'profile' | 'settings' | 'about'>(
     initialSettingsTab
@@ -81,6 +90,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
   // Synchronized statistics
   const myRegisteredList = activities.filter((a) => a.isRegistered);
+  const myBuddiesList = buddyPosts.filter((b) => b.isJoined || b.isMine);
   const myFavoritesList = activities.filter((a) => a.favorite);
   const myPublishedList = activities.filter((a) => a.isUserPublished);
 
@@ -220,6 +230,151 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 className="mt-4 px-5 py-2.5 rounded-full bg-[#FF5A4F] text-white text-xs font-semibold"
               >
                 去发现活动
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- 二级页面 1.5：我的结伴页面 ---
+  if (subPage === 'my-buddies') {
+    const filteredMyBuddies = myBuddiesList.filter((b) => {
+      if (buddyTab === 'mine') return Boolean(b.isMine);
+      if (buddyTab === 'joined') return Boolean(b.isJoined && !b.isMine);
+      return true;
+    });
+
+    const buddyTabs: { id: 'all' | 'joined' | 'mine'; label: string }[] = [
+      { id: 'all', label: '全部结伴' },
+      { id: 'joined', label: '我加入的' },
+      { id: 'mine', label: '我发起的' },
+    ];
+
+    return (
+      <div className="min-h-full bg-[#F7F7F5] pb-8">
+        <header className="px-5 pt-3 pb-3 bg-white border-b border-[#F0EEEC] sticky top-0 z-20">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => onChangeSubPage('main')}
+              aria-label="返回我的页面"
+              className="w-9 h-9 -ml-1.5 rounded-full flex items-center justify-center text-[#171717] hover:bg-[#F7F7F5]"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <h1 className="text-[18px] font-bold text-[#171717]">我的结伴</h1>
+          </div>
+
+          <div className="mt-3 grid grid-cols-3 gap-1.5 bg-[#F7F7F5] p-1 rounded-xl">
+            {buddyTabs.map((t) => {
+              const active = buddyTab === t.id;
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setBuddyTab(t.id)}
+                  className={`py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    active ? 'bg-white text-[#FF5A4F] shadow-xs' : 'text-[#514744]'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
+        </header>
+
+        <div className="px-5 pt-4 space-y-3.5">
+          {filteredMyBuddies.map((post) => (
+            <div
+              key={post.id}
+              className="bg-white rounded-[18px] p-4 border border-[#F0EEEC] space-y-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xs font-semibold text-[#FF5A4F] bg-[#FFF0ED] px-2.5 py-0.5 rounded-md">
+                    {post.tag}
+                  </span>
+                  <span className="text-xs text-[#9A8984] truncate">
+                    {post.subCampus} · 发起人：{post.authorName}
+                  </span>
+                </div>
+                <span className="text-xs font-semibold text-[#171717] tabular-nums shrink-0">
+                  {post.currentCount}/{post.maxCount}人
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-[15px] font-bold text-[#171717]">{post.title}</h3>
+                <p className="text-xs text-[#514744] mt-1 leading-relaxed">
+                  {post.description}
+                </p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#F7F7F5] space-y-1 text-xs">
+                <p className="text-[#171717] font-medium">
+                  关联活动：{post.activityTitle}
+                </p>
+                <p className="text-[#514744]">集合地点：{post.meetingPoint}</p>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-[#FFF0ED]/70 border border-[#FF5A4F]/20 flex items-center justify-between gap-2">
+                <div className="min-w-0 text-xs">
+                  <span className="text-[#9A8984] block text-[11px]">联系微信号 / 群口令</span>
+                  <span className="font-semibold text-[#171717] truncate block mt-0.5">
+                    {post.contactCode}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(post.contactCode).catch(() => {});
+                    setCopiedBuddyId(post.id);
+                    setTimeout(() => setCopiedBuddyId(null), 2000);
+                  }}
+                  className="px-2.5 py-1 rounded-lg bg-white text-[#FF5A4F] text-xs font-semibold shrink-0"
+                >
+                  {copiedBuddyId === post.id ? '已复制' : '复制'}
+                </button>
+              </div>
+
+              <div className="pt-2 border-t border-[#F0EEEC] flex items-center justify-between gap-2">
+                {post.isMine ? (
+                  <span className="text-xs text-[#9A8984]">我发起的结伴招募</span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => onToggleJoinBuddy(post.id)}
+                    className="text-xs text-[#9A8984] hover:text-[#FF5A4F]"
+                  >
+                    退出该结伴
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => onSelectActivity(post.activityId)}
+                  className="text-xs font-semibold text-[#FF5A4F]"
+                >
+                  查看关联活动
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {filteredMyBuddies.length === 0 && (
+            <div className="bg-white rounded-[18px] p-8 text-center border border-[#F0EEEC]">
+              <p className="text-sm font-semibold text-[#171717]">暂无结伴记录</p>
+              <p className="text-xs text-[#9A8984] mt-1">
+                去「找搭子」广场或活动详情页加入感兴趣的同场结伴吧
+              </p>
+              <button
+                type="button"
+                onClick={onGoToDiscover}
+                className="mt-4 px-5 py-2.5 rounded-full bg-[#FF5A4F] text-white text-xs font-semibold"
+              >
+                去发现搭子
               </button>
             </div>
           )}
@@ -747,7 +902,7 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
           </div>
 
           {/* 2. 活动数据统计 */}
-          <div className="mt-4 pt-4 border-t border-[#F0EEEC] grid grid-cols-3 gap-2 text-center">
+          <div className="mt-4 pt-4 border-t border-[#F0EEEC] grid grid-cols-4 gap-1.5 text-center">
             <button
               type="button"
               onClick={() => onChangeSubPage('my-registrations')}
@@ -757,6 +912,17 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
                 {myRegisteredList.length}
               </span>
               <span className="text-xs text-[#9A8984] mt-0.5 block">我的报名</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onChangeSubPage('my-buddies')}
+              className="py-1 rounded-xl hover:bg-[#F7F7F5] transition-colors"
+            >
+              <span className="block text-[20px] font-bold text-[#171717] tabular-nums">
+                {myBuddiesList.length}
+              </span>
+              <span className="text-xs text-[#9A8984] mt-0.5 block">我的结伴</span>
             </button>
 
             <button
@@ -786,14 +952,14 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
         {/* 3. 我的活动入口卡片 */}
         <section className="bg-white rounded-[18px] p-4 border border-[#F0EEEC]">
           <h2 className="text-[15px] font-bold text-[#171717] mb-3">我的活动</h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-2">
             <button
               type="button"
               onClick={() => onChangeSubPage('my-registrations')}
-              className="p-3 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
+              className="p-2.5 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
             >
-              <div className="w-10 h-10 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
-                <CalendarCheck className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
+                <CalendarCheck className="w-4 h-4" />
               </div>
               <span className="text-xs font-semibold text-[#171717] mt-2">我的报名</span>
               <span className="text-[11px] text-[#9A8984] mt-0.5 tabular-nums">
@@ -803,11 +969,25 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
 
             <button
               type="button"
-              onClick={() => onChangeSubPage('my-favorites')}
-              className="p-3 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
+              onClick={() => onChangeSubPage('my-buddies')}
+              className="p-2.5 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
             >
-              <div className="w-10 h-10 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
-                <Heart className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
+                <Users className="w-4 h-4" />
+              </div>
+              <span className="text-xs font-semibold text-[#171717] mt-2">我的结伴</span>
+              <span className="text-[11px] text-[#9A8984] mt-0.5 tabular-nums">
+                {myBuddiesList.length} 组同行
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onChangeSubPage('my-favorites')}
+              className="p-2.5 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
+            >
+              <div className="w-9 h-9 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
+                <Heart className="w-4 h-4" />
               </div>
               <span className="text-xs font-semibold text-[#171717] mt-2">我的收藏</span>
               <span className="text-[11px] text-[#9A8984] mt-0.5 tabular-nums">
@@ -818,10 +998,10 @@ export const ProfilePage: React.FC<ProfilePageProps> = ({
             <button
               type="button"
               onClick={() => onChangeSubPage('my-published')}
-              className="p-3 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
+              className="p-2.5 rounded-2xl bg-[#F7F7F5] hover:bg-[#FFF0ED] transition-colors flex flex-col items-center text-center group"
             >
-              <div className="w-10 h-10 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
-                <FileText className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-full bg-white text-[#FF5A4F] flex items-center justify-center shadow-2xs">
+                <FileText className="w-4 h-4" />
               </div>
               <span className="text-xs font-semibold text-[#171717] mt-2">我的发布</span>
               <span className="text-[11px] text-[#9A8984] mt-0.5 tabular-nums">

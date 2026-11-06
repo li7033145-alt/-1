@@ -1,6 +1,7 @@
 import { Activity, CampusInfo, UserProfile } from '../types/activity';
 
 export const DEFAULT_CAMPUS = '广东建设职业技术学院';
+export const DEFAULT_SUB_CAMPUS = '全部校区';
 
 // Fixed reference timestamp matching current environment date (2026-11-03T14:00:00)
 export const DEMO_NOW_ISO = '2026-11-03T14:00:00';
@@ -11,8 +12,9 @@ export const CAMPUS_LIST: CampusInfo[] = [
     name: '广东建设职业技术学院',
     shortName: '广建院',
     city: '清远 / 广州',
-    district: '清远校区 · 环城东路',
-    activeCount: 8,
+    district: '清远校区 · 广州校区',
+    subCampuses: ['清远校区', '广州校区'],
+    activeCount: 10,
     studentCountText: '1.8万+ 在校同学正在使用',
     weatherText: '11月3日 周二 · 晴 24°C',
   },
@@ -21,7 +23,8 @@ export const CAMPUS_LIST: CampusInfo[] = [
     name: '华南理工大学',
     shortName: '华工',
     city: '广州',
-    district: '大学城校区 / 五山校区',
+    district: '大学城校区 · 五山校区 · 国际校区',
+    subCampuses: ['大学城校区', '五山校区', '国际校区'],
     activeCount: 5,
     studentCountText: '3.2万+ 在校同学正在使用',
     weatherText: '11月3日 周二 · 晴 25°C',
@@ -31,7 +34,8 @@ export const CAMPUS_LIST: CampusInfo[] = [
     name: '广东工业大学',
     shortName: '广工',
     city: '广州',
-    district: '大学城校区 · 外环西路',
+    district: '大学城校区 · 龙洞校区 · 东风路校区',
+    subCampuses: ['大学城校区', '龙洞校区', '东风路校区'],
     activeCount: 4,
     studentCountText: '2.9万+ 在校同学正在使用',
     weatherText: '11月3日 周二 · 多云 24°C',
@@ -42,6 +46,7 @@ export const CAMPUS_LIST: CampusInfo[] = [
     shortName: '广美',
     city: '广州',
     district: '大学城校区 · 昌岗校区',
+    subCampuses: ['大学城校区', '昌岗校区'],
     activeCount: 4,
     studentCountText: '1.1万+ 在校同学正在使用',
     weatherText: '11月3日 周二 · 晴 25°C',
@@ -51,7 +56,8 @@ export const CAMPUS_LIST: CampusInfo[] = [
     name: '深圳职业技术大学',
     shortName: '深职大',
     city: '深圳',
-    district: '西丽湖校区 · 留仙洞校区',
+    district: '西丽湖校区 · 留仙洞校区 · 官龙山校区',
+    subCampuses: ['西丽湖校区', '留仙洞校区', '官龙山校区'],
     activeCount: 4,
     studentCountText: '2.6万+ 在校同学正在使用',
     weatherText: '11月3日 周二 · 晴 26°C',
@@ -66,12 +72,14 @@ export const INITIAL_USER_PROFILE: UserProfile = {
   phone: '13826048819',
   bio: '热爱校园摄影与乐队现场，周末常驻南区草坪与图书馆。',
   campus: DEFAULT_CAMPUS,
+  subCampus: '清远校区',
+  interests: ['艺术', '体育', '讲座'],
   notificationsEnabled: true,
   calendarSyncEnabled: true,
 };
 
 export const INITIAL_ACTIVITIES: Activity[] = [
-  // 1. 校园音乐节 —— 状态 A：报名中（首页重点推荐、热门活动）
+  // 1. 校园音乐节 —— 状态 A：报名中（清远校区）
   {
     id: 'act-music-2026',
     title: '校园音乐节',
@@ -91,6 +99,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: true,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isFeaturedOnHome: true,
     isHotOnHome: true,
     isStartingSoonOnHome: true,
@@ -108,7 +117,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     contact: '苏同学 13826019920（企业微信同号）',
   },
 
-  // 2. 篮球友谊赛 —— 状态 A：报名中（正在发生 + 热门活动）
+  // 2. 篮球友谊赛 —— 状态 A：报名中（清远校区）
   {
     id: 'act-basketball-2026',
     title: '篮球友谊赛',
@@ -120,7 +129,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-03T19:00:00',
     registrationStartTime: '2026-10-28T08:00:00',
     registrationDeadline: '2026-11-03T16:00:00',
-    location: '北区灯光篮球场 1号场',
+    location: '清远校区北区灯光篮球场 1号场',
     organizer: '校篮球协会 · 体育部',
     organizerInfo: '广建院五星级体育社团，每周组织院系联赛、路人王单挑赛与裁判培训。',
     capacity: 120,
@@ -128,6 +137,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isOngoingOnHome: true,
     isHotOnHome: true,
     isRegistered: true,
@@ -152,7 +162,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     contact: '周队长 13922105581',
   },
 
-  // 3. 校园设计大赛 —— 状态 A：报名中（即将开始）
+  // 3. 校园设计大赛 —— 状态 A：报名中（广州校区）
   {
     id: 'act-design-2026',
     title: '校园设计大赛',
@@ -164,7 +174,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-08T17:30:00',
     registrationStartTime: '2026-10-26T09:00:00',
     registrationDeadline: '2026-11-07T23:59:00',
-    location: '艺术设计楼 302 创客路演厅',
+    location: '广州校区艺术设计楼 302 创客路演厅',
     organizer: '建筑与艺术设计学院团总支',
     organizerInfo: '专注培养建筑美学、室内空间与数字视觉创新人才，搭建校企联合实训平台。',
     capacity: 100,
@@ -172,21 +182,24 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: true,
     campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    isFeaturedOnHome: true,
     isStartingSoonOnHome: true,
+    isHotOnHome: true,
     schedule: [
       { time: '14:00 - 14:30', title: '大赛命题解析与往届金奖分享', detail: '指导老师详解三大赛道评分标准与制图规范' },
       { time: '14:30 - 16:30', title: '跨专业组队工作坊 & 方案快题指导', detail: '现场自由组队，导师一对一打磨草图方案' },
       { time: '16:30 - 17:30', title: '初赛路演抽签与答疑', detail: '确认作品提交格式与终评展板制作要求' },
     ],
     requirements: [
-      '支持个人或 2-4 人跨学院组队参赛',
+      '支持个人或 2-4 人跨学院组队参赛（清远与广州校区同学均可报名）',
       '请自备笔记本电脑或手绘草图本参与工作坊',
       '参赛作品须为本人原创，严禁抄袭或代做',
     ],
     contact: '陈老师 / 梁同学 13719083321',
   },
 
-  // 4. 创意市集 —— 状态 B：报名已满（正在发生 + 热门活动）
+  // 4. 创意市集 —— 状态 B：报名已满（清远校区）
   {
     id: 'act-market-2026',
     title: '创意市集',
@@ -198,7 +211,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-05T20:00:00',
     registrationStartTime: '2026-10-20T09:00:00',
     registrationDeadline: '2026-11-05T12:00:00',
-    location: '图书馆前银杏林荫大道',
+    location: '清远校区图书馆前银杏林荫大道',
     organizer: '学生社团联合会',
     organizerInfo: '统筹全校 68 个注册学生社团，打造多元活力的校园社团文化名片。',
     capacity: 150,
@@ -206,6 +219,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'full',
     favorite: true,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isOngoingOnHome: true,
     isHotOnHome: true,
     isRegistered: true,
@@ -218,7 +232,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
       note: '已预约校园建筑套色印章集章卡',
     },
     schedule: [
-      { time: '12:00 - 14:30', title: '午间开市 & 集章卡派发', detail: '前 150 名预约同学凭码领取限定集章册与手作体验券' },
+      { time: '12:00 - 14:30', title: '午间开市 & 集章卡派发', detail: '前 150 名预约同学签到领取限定集章册与手作体验券' },
       { time: '14:30 - 17:30', title: '社团手作工坊体验', detail: '陶艺彩绘、植物拓印帆布袋及旧书盲盒互换' },
       { time: '17:30 - 20:00', title: '暮色灯串夜市与街头吉他弹唱', detail: '林荫道亮灯，开启夜间漫步交流' },
     ],
@@ -229,7 +243,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     contact: '社联林同学 15918726630',
   },
 
-  // 5. 校园摄影展 —— 状态 D：活动已结束
+  // 5. 校园摄影展 —— 状态 D：活动已结束（清远校区）
   {
     id: 'act-photo-2026',
     title: '校园摄影展',
@@ -241,7 +255,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-10-28T18:00:00',
     registrationStartTime: '2026-10-10T09:00:00',
     registrationDeadline: '2026-10-27T18:00:00',
-    location: '图书馆一楼阳光展厅',
+    location: '清远校区图书馆一楼阳光展厅',
     organizer: '青年摄影协会 · 党委宣传部',
     organizerInfo: '用镜头记录校园变迁与青春面孔，定期举办暗房冲洗、人像外拍与年度摄影大展。',
     capacity: 150,
@@ -249,6 +263,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'ended',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isRegistered: true,
     registrationRecord: {
       registeredAt: '2026-10-16T15:40:00',
@@ -259,7 +274,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
       note: '已签到并领取展览纪念明信片套装',
     },
     schedule: [
-      { time: '09:00 - 12:00', title: '自由观展与语音导览', detail: '扫描画框旁二维码即可收听摄影师创作故事' },
+      { time: '09:00 - 12:00', title: '自由观展与语音导览', detail: '扫描画框旁导览卡即可收听摄影师创作故事' },
       { time: '14:30 - 16:00', title: '策展人专场导览 & 胶片摄影沙龙', detail: '一等奖得主现场分享校园建筑构图与用光技巧' },
       { time: '16:00 - 18:00', title: '观众投票与明信片加盖纪念章', detail: '票选「我最喜爱的校园瞬间」人气作品' },
     ],
@@ -291,7 +306,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     },
   },
 
-  // 6. 学术讲座 —— 状态 D：活动已结束
+  // 6. 学术讲座 —— 状态 D：活动已结束（广州校区）
   {
     id: 'act-lecture-2026',
     title: '学术讲座',
@@ -303,7 +318,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-10-25T17:00:00',
     registrationStartTime: '2026-10-15T09:00:00',
     registrationDeadline: '2026-10-24T22:00:00',
-    location: '行政楼一楼学术报告厅',
+    location: '广州校区行政楼一楼学术报告厅',
     organizer: '教务处 · 土木工程学院',
     organizerInfo: '广东建设职业技术学院学术交流中心，致力于引入行业前沿技术与校企导师资源。',
     capacity: 150,
@@ -311,6 +326,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'ended',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
     schedule: [
       { time: '14:00 - 14:30', title: '考勤签到入场', detail: '刷校园卡签到，计入第二课堂学术讲座学时' },
       { time: '14:30 - 16:15', title: '主题报告：BIM 与智能建造新趋势', detail: '结合湾区超级工程案例解析数字化施工全流程' },
@@ -320,7 +336,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
       '请提前 15 分钟入场完毕并将手机调至静音状态',
       '全程参与并完成签退可获 0.5 第二课堂素质拓展学分',
     ],
-    contact: '土木学院科研办 0763-3918802',
+    contact: '土木学院科研办 020-36008802',
     recap: {
       summary:
         '本场讲座座无虚席，150 名同学全程参与。主讲嘉宾通过三维数字孪生实景演示，让同学们直观理解了智能建造如何重塑传统工程行业，现场互动提问超过 15 人次。',
@@ -338,7 +354,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     },
   },
 
-  // 7. 校园辩论赛决赛观摩 —— 状态 C：报名已截止（但活动尚未结束）
+  // 7. 校际华语辩论赛决赛观摩 —— 状态 C：报名已截止（清远校区）
   {
     id: 'act-debate-2026',
     title: '校际华语辩论赛决赛观摩',
@@ -350,7 +366,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-04T21:15:00',
     registrationStartTime: '2026-10-22T09:00:00',
     registrationDeadline: '2026-11-02T22:00:00',
-    location: '学生活动中心二楼多功能厅',
+    location: '清远校区学生活动中心二楼多功能厅',
     organizer: '校辩论队 · 语言文化协会',
     organizerInfo: '曾获省高校辩论邀请赛四强，致力于培养青年大学生的逻辑思辨与公共表达能力。',
     capacity: 120,
@@ -358,9 +374,10 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'closed',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isStartingSoonOnHome: true,
     schedule: [
-      { time: '18:30 - 19:00', title: '观众凭码入场并领取表决器', detail: '对号入座，赛前印象票投递' },
+      { time: '18:30 - 19:00', title: '观众签到入场并领取表决器', detail: '对号入座，赛前印象票投递' },
       { time: '19:00 - 20:20', title: '冠军争夺战正赛', detail: '开篇立论、质询小结、自由辩论与总结陈词' },
       { time: '20:20 - 21:15', title: '评委奇袭点评与颁奖盛典', detail: '揭晓总冠军队伍及全程最佳辩手' },
     ],
@@ -371,7 +388,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     contact: '辩论队吴同学 13602914472',
   },
 
-  // 8. 迎新晚会节目海选 —— 状态 E：未开放报名（即将开放）
+  // 8. 星光迎新晚会节目海选及观摩 —— 状态 E：未开放报名（广州校区）
   {
     id: 'act-gala-2026',
     title: '星光迎新晚会节目海选及观摩',
@@ -383,7 +400,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-18T21:30:00',
     registrationStartTime: '2026-11-08T09:00:00',
     registrationDeadline: '2026-11-16T18:00:00',
-    location: '大礼堂主舞台',
+    location: '广州校区大礼堂主舞台',
     organizer: '校团委 · 校学生会',
     organizerInfo: '广东建设职业技术学院校级大型晚会筹备组。',
     capacity: 200,
@@ -391,6 +408,8 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'upcoming',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    isStartingSoonOnHome: true,
     schedule: [
       { time: '18:30 - 19:45', title: '歌舞类节目舞台联排竞演', detail: '灯光音响全要素合成展示' },
       { time: '19:45 - 21:00', title: '语言类及器乐类节目展示', detail: '导演组与大众评审现场打分' },
@@ -401,6 +420,99 @@ export const INITIAL_ACTIVITIES: Activity[] = [
       '节目参演同学需自备伴奏音频（WAV/MP3 格式）',
     ],
     contact: '校学生会文娱部 13802887615',
+  },
+
+  // 9. 广府传统建筑木构模型展与工坊 —— 状态 A：报名中（广州校区特色活动）
+  {
+    id: 'act-gz-arch-2026',
+    title: '广府古建筑测绘与榫卯模型展',
+    cover: 'photo',
+    category: '展览',
+    description:
+      '广州校区古建筑保护协会年度特展！展出陈家祠、余荫山房等岭南古建筑测绘手稿与 1:20 纯手工榫卯斗拱木构模型，现场每天开放两场鲁班锁与斗拱拆装互动体验。',
+    startTime: '2026-11-03T10:00:00',
+    endTime: '2026-11-07T18:00:00',
+    registrationStartTime: '2026-10-26T09:00:00',
+    registrationDeadline: '2026-11-07T12:00:00',
+    location: '广州校区综合实训楼一楼展厅',
+    organizer: '古建筑保护协会 · 建筑工程系',
+    organizerInfo: '广州校区特色专业社团，专注于岭南传统建筑修缮与木作技艺传承。',
+    capacity: 90,
+    registeredCount: 52,
+    status: 'open',
+    favorite: false,
+    campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    isOngoingOnHome: true,
+    isHotOnHome: true,
+    schedule: [
+      { time: '10:00 - 14:30', title: '古建测绘手稿与木构模型自由观展', detail: '配备专业解说员讲解岭南建筑三雕两塑一彩' },
+      { time: '14:30 - 17:30', title: '榫卯斗拱亲手拼装体验工坊', detail: '分组完成一朵四铺作斗拱实体拼装挑战' },
+    ],
+    requirements: ['欢迎广州校区及清远校区跨区交流同学报名参与'],
+    contact: '古建社何同学 13622889012',
+  },
+
+  // 10. AI 辅助建筑设计与数字美学讲座 —— 状态 A：报名中（清远校区讲座特色活动）
+  {
+    id: 'act-qy-lecture-2026',
+    title: 'AI 辅助建筑设计与数字美学讲座',
+    cover: 'lecture',
+    category: '讲座',
+    description:
+      '聚焦生成式 AI 与参数化建模在现代建筑空间与视觉艺术设计中的前沿应用。特邀青年建筑师与数字艺术策展人现场演示工作流，并开放互动体验。',
+    startTime: '2026-11-05T15:00:00',
+    endTime: '2026-11-05T17:00:00',
+    registrationStartTime: '2026-10-27T09:00:00',
+    registrationDeadline: '2026-11-05T12:00:00',
+    location: '清远校区信息楼一楼学术报告厅',
+    organizer: '建筑信息工程学院 · 数字化设计研习社',
+    organizerInfo: '专注 BIM、参数化建模与数字艺术跨界创新的学生学术组织。',
+    capacity: 120,
+    registeredCount: 78,
+    status: 'open',
+    favorite: false,
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    isStartingSoonOnHome: true,
+    schedule: [
+      { time: '14:40 - 15:00', title: '签到入场与案例手册领取', detail: '刷校园卡签到，计入第二课堂学时' },
+      { time: '15:00 - 16:30', title: '主题分享：从草图到数字空间生成', detail: '现场演示建筑概念生成与光影渲染技巧' },
+      { time: '16:30 - 17:00', title: '互动问答与作品集点评', detail: '针对学生日常课程设计进行一对一建议' },
+    ],
+    requirements: ['对建筑美学、数字设计或 AI 工具感兴趣的同学均可报名'],
+    contact: '研习社陈同学 13826057712',
+  },
+
+  // 11. 广州校区秋季羽毛球混合团体挑战赛 —— 状态 A：报名中（广州校区体育特色活动）
+  {
+    id: 'act-gz-badminton-2026',
+    title: '秋季羽毛球混合团体挑战赛',
+    cover: 'basketball',
+    category: '文体',
+    description:
+      '广州校区羽毛球协会年度人气体育赛事！包含男双、女双、混双及趣味发球挑战赛，现场开放个人组队匹配与观赛互动抽奖，欢迎热爱羽毛球运动的同学挥拍上场。',
+    startTime: '2026-11-06T16:00:00',
+    endTime: '2026-11-06T19:00:00',
+    registrationStartTime: '2026-10-26T09:00:00',
+    registrationDeadline: '2026-11-06T12:00:00',
+    location: '广州校区综合体育馆羽毛球场',
+    organizer: '广州校区羽毛球协会 · 体育部',
+    organizerInfo: '广州校区活力运动社团，每周组织球技切磋与院系交流赛。',
+    capacity: 80,
+    registeredCount: 54,
+    status: 'open',
+    favorite: false,
+    campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    isStartingSoonOnHome: true,
+    schedule: [
+      { time: '15:45 - 16:00', title: '参赛选手与互动观众检录', detail: '领取比赛号码布与运动能量饮品' },
+      { time: '16:00 - 18:30', title: '混合团体小组循环赛与淘汰赛', detail: '双打项目精彩对决' },
+      { time: '18:30 - 19:00', title: '趣味九宫格发球挑战与颁奖', detail: '赢取定制羽毛球拍手胶与纪念奖牌' },
+    ],
+    requirements: ['入场请穿无痕运动球鞋，可自带球拍或现场借用社团备用拍'],
+    contact: '羽协刘同学 13719228840',
   },
 
   // --- 我的发布专属演示数据（覆盖：草稿、审核中、审核通过、审核未通过、已结束） ---
@@ -415,7 +527,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-09T18:00:00',
     registrationStartTime: '2026-11-01T09:00:00',
     registrationDeadline: '2026-11-08T20:00:00',
-    location: '学生活动中心 406 暗房工作室',
+    location: '清远校区学生活动中心 406 暗房工作室',
     organizer: '林晓阳 · 青年摄影协会',
     organizerInfo: '校摄影协会胶片小组发起人',
     capacity: 30,
@@ -423,6 +535,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isUserPublished: true,
     reviewStatus: 'approved',
     schedule: [
@@ -443,7 +556,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-14T21:00:00',
     registrationStartTime: '2026-11-04T09:00:00',
     registrationDeadline: '2026-11-13T22:00:00',
-    location: '信息楼 504 创新机房',
+    location: '清远校区信息楼 504 创新机房',
     organizer: '林晓阳 · 开发者研习社',
     organizerInfo: '建筑信息工程学院学生技术交流社团',
     capacity: 60,
@@ -451,6 +564,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isUserPublished: true,
     reviewStatus: 'pending',
     schedule: [
@@ -479,6 +593,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isUserPublished: true,
     reviewStatus: 'draft',
     schedule: [
@@ -499,7 +614,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-12T22:30:00',
     registrationStartTime: '2026-11-04T09:00:00',
     registrationDeadline: '2026-11-11T18:00:00',
-    location: '南区学生公寓 6栋天台（待变更）',
+    location: '清远校区南区学生公寓 6栋天台（待变更）',
     organizer: '林晓阳 · 光影电影社',
     organizerInfo: '校园电影文化爱好者社团',
     capacity: 50,
@@ -507,6 +622,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isUserPublished: true,
     reviewStatus: 'rejected',
     rejectReason: '场地安全提醒：宿舍楼天台夜间不具备大型集会安全条件，请将活动地点修改为「学生活动中心放映厅」或「南区小剧场」后重新提交。',
@@ -536,6 +652,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'ended',
     favorite: false,
     campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
     isUserPublished: true,
     reviewStatus: 'ended',
     schedule: [
@@ -546,7 +663,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     contact: '林晓阳 13826048819',
   },
 
-  // --- 其他高校演示数据（方便切换学校时看到对应学校的真实活动） ---
+  // --- 其他高校演示数据 ---
   {
     id: 'scut-music-1',
     title: '鲤工湖畔草坪交响音乐夜',
@@ -565,6 +682,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '华南理工大学',
+    subCampus: '大学城校区',
     isFeaturedOnHome: true,
     isHotOnHome: true,
     isStartingSoonOnHome: true,
@@ -582,7 +700,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     endTime: '2026-11-03T17:30:00',
     registrationStartTime: '2026-10-26T09:00:00',
     registrationDeadline: '2026-11-03T14:00:00',
-    location: '大学城校区 B2 报告厅',
+    location: '五山校区逸夫人文馆报告厅',
     organizer: '计算机科学与工程学院',
     organizerInfo: '华南理工大学学术讲坛',
     capacity: 180,
@@ -590,6 +708,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'full',
     favorite: false,
     campus: '华南理工大学',
+    subCampus: '五山校区',
     isOngoingOnHome: true,
     isHotOnHome: true,
     schedule: [{ time: '14:30 - 17:30', title: '学术报告与机器人现场演示', detail: '互动问答' }],
@@ -614,6 +733,7 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广东工业大学',
+    subCampus: '大学城校区',
     isFeaturedOnHome: true,
     isHotOnHome: true,
     isStartingSoonOnHome: true,
@@ -639,11 +759,12 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '广州美术学院',
+    subCampus: '大学城校区',
     isFeaturedOnHome: true,
     isHotOnHome: true,
     isOngoingOnHome: true,
     schedule: [{ time: '10:00 - 18:00', title: '版画原作观展与丝网印刷体验', detail: '每日下午两点艺术家导览' }],
-    requirements: ['凭预约码免费入馆'],
+    requirements: ['凭校园卡免费入馆'],
     contact: '广美策展组 13500112233',
   },
   {
@@ -664,11 +785,169 @@ export const INITIAL_ACTIVITIES: Activity[] = [
     status: 'open',
     favorite: false,
     campus: '深圳职业技术大学',
+    subCampus: '西丽湖校区',
     isFeaturedOnHome: true,
     isHotOnHome: true,
     isStartingSoonOnHome: true,
     schedule: [{ time: '14:00 - 20:30', title: '创客展位互动与项目路演', detail: '集齐 6 枚印章可兑换定制周边' }],
     requirements: ['全校师生均可报名参与'],
     contact: '创客协会 13688990011',
+  },
+];
+
+export const INITIAL_BUDDY_POSTS: import('../types/activity').BuddyPost[] = [
+  {
+    id: 'buddy-music-1',
+    activityId: 'act-music-2026',
+    activityTitle: '校园音乐节',
+    activityStartTime: '2026-11-06T18:30:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    authorName: '苏念初',
+    authorDepartment: '建筑与艺术设计学院',
+    authorGrade: '2024级',
+    tag: '同去现场',
+    title: '草坪前排听棱镜回声乐队，带了防水野餐垫！',
+    description:
+      '已经备好大号野餐垫、荧光手环和柠檬茶，想找 2-3 位喜欢校园民谣和乐队现场的同学一起提前半小时进场占前排，散场还可以一起去南区夜宵街！',
+    meetingPoint: '11月6日 18:00 清远校区南区草坪西门签到处',
+    maxCount: 4,
+    currentCount: 2,
+    participants: ['苏念初', '周晓敏'],
+    contactCode: '微信号：sunian_2024（备注：音乐节搭子）',
+    createdAt: '2026-11-03T11:20:00',
+    isJoined: false,
+  },
+  {
+    id: 'buddy-music-2',
+    activityId: 'act-music-2026',
+    activityTitle: '校园音乐节',
+    activityStartTime: '2026-11-06T18:30:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    authorName: '林晓阳',
+    authorDepartment: '建筑信息工程学院 · 软件技术',
+    authorGrade: '2024级',
+    tag: '约拍互勉',
+    title: '带富士相机拍音乐节舞台与草坪氛围感照片',
+    description:
+      '本人摄影社成员，带富士 XT-5 + 大光圈定焦镜头去音乐节，找几位想拍晚风荧光棒氛围照的同学互拍，当晚即可直出返图！',
+    meetingPoint: '11月6日 18:15 南区中心草坪灯塔下',
+    maxCount: 4,
+    currentCount: 3,
+    participants: ['林晓阳', '张佳怡', '李梓豪'],
+    contactCode: '微信：linxy_photo（音乐节互勉小分队）',
+    createdAt: '2026-11-02T20:10:00',
+    isJoined: true,
+    isMine: true,
+  },
+  {
+    id: 'buddy-design-1',
+    activityId: 'act-design-2026',
+    activityTitle: '校园设计大赛',
+    activityStartTime: '2026-11-08T14:00:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    authorName: '温知夏',
+    authorDepartment: '建筑与艺术设计学院 · 室内设计',
+    authorGrade: '2023级',
+    tag: '组队参赛',
+    title: '数字交互与文创赛道3缺1！招前端或视觉排版队友',
+    description:
+      '我们已有 1 名空间建模 + 2 名插画视觉同学，曾获上届院级银奖。想找一位懂 UI 交互或展板排版的同学冲刺今年校级金奖与创新学分！',
+    meetingPoint: '广州校区艺术设计楼 302 路演厅前排 / 可线上先沟通',
+    maxCount: 4,
+    currentCount: 3,
+    participants: ['温知夏', '罗子恒', '林晓阳'],
+    contactCode: '组队群口令：#筑梦设计冲金小队#（微信：wenzhixia_art）',
+    createdAt: '2026-11-01T16:45:00',
+    isJoined: true,
+  },
+  {
+    id: 'buddy-arch-1',
+    activityId: 'act-gz-arch-2026',
+    activityTitle: '广府古建筑测绘与榫卯模型展',
+    activityStartTime: '2026-11-03T10:00:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '广州校区',
+    authorName: '何景行',
+    authorDepartment: '土木工程学院 · 古建筑工程技术',
+    authorGrade: '2024级',
+    tag: '同去现场',
+    title: '周四下午场一起去拼四铺作榫卯斗拱模型！',
+    description:
+      '工坊需要两人一组协作完成斗拱拼装挑战，我对鲁班锁和宋式斗拱结构很熟，找一位动手能力强或者想拍古建模型细节的搭子一起组队拿纪念徽章。',
+    meetingPoint: '广州校区综合实训楼一楼展厅入口签到台',
+    maxCount: 2,
+    currentCount: 1,
+    participants: ['何景行'],
+    contactCode: '微信：he_arch2024（备注：斗拱工坊搭子）',
+    createdAt: '2026-11-03T09:30:00',
+    isJoined: false,
+  },
+  {
+    id: 'buddy-basketball-1',
+    activityId: 'act-basketball-2026',
+    activityTitle: '篮球友谊赛',
+    activityStartTime: '2026-11-03T16:30:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    authorName: '陆星河',
+    authorDepartment: '建筑信息工程学院',
+    authorGrade: '2024级',
+    tag: '同去现场',
+    title: '建信学院主场加油团 + 中场三分大赛搭子',
+    description:
+      '一起去 1 号灯光球场给院队呐喊助威，中场休息一起报名 60 秒三分投篮挑战赛，打完球还可以约北区二饭堂！',
+    meetingPoint: '16:15 清远校区北区 1 号灯光球场看台西侧',
+    maxCount: 5,
+    currentCount: 3,
+    participants: ['陆星河', '赵宇轩', '邓皓'],
+    contactCode: '微信：luxinghe_ball（备注：篮球赛搭子）',
+    createdAt: '2026-11-03T12:10:00',
+    isJoined: false,
+  },
+  {
+    id: 'buddy-market-1',
+    activityId: 'act-market-2026',
+    activityTitle: '创意市集',
+    activityStartTime: '2026-11-03T12:00:00',
+    campus: '广东建设职业技术学院',
+    subCampus: '清远校区',
+    authorName: '许清欢',
+    authorDepartment: '市政与交通工程学院',
+    authorGrade: '2025级',
+    tag: '跨校区同行',
+    title: '周末广州校区过来清远校区逛银杏市集集章',
+    description:
+      '准备搭乘校际交通车来清远校区逛创意市集、盖校园建筑套色印章，找同路同学一起逛摊位、互拍银杏大道照片！',
+    meetingPoint: '清远校区图书馆前银杏林荫大道入口',
+    maxCount: 4,
+    currentCount: 4,
+    participants: ['许清欢', '唐果', '宋佳', '吴敏'],
+    contactCode: '微信：xuqh_2025（市集逛展小队）',
+    createdAt: '2026-11-02T14:00:00',
+    isJoined: false,
+  },
+  {
+    id: 'buddy-scut-1',
+    activityId: 'scut-music-1',
+    activityTitle: '鲤工湖畔草坪交响音乐夜',
+    activityStartTime: '2026-11-07T19:00:00',
+    campus: '华南理工大学',
+    subCampus: '大学城校区',
+    authorName: '沈嘉树',
+    authorDepartment: '软件学院',
+    authorGrade: '2024级',
+    tag: '同去现场',
+    title: '五山校区跨校区去大学城听湖畔交响夜',
+    description: '周六傍晚从五山坐地铁去大学城中心湖草坪，散场一起拼车回五山！',
+    meetingPoint: '大学城南地铁站 C 口 / 中心湖草坪',
+    maxCount: 4,
+    currentCount: 2,
+    participants: ['沈嘉树', '林宇'],
+    contactCode: '微信：scut_shen（备注：交响夜搭子）',
+    createdAt: '2026-11-03T10:30:00',
+    isJoined: false,
   },
 ];

@@ -1,4 +1,9 @@
 import React, { useState } from 'react';
+import musicFestivalImg from '../assets/images/campus_music_festival_1793980126412.jpg';
+import basketballGameImg from '../assets/images/campus_basketball_game_1793980127239.jpg';
+import designExhibitionImg from '../assets/images/campus_design_exhibition_1793980127841.jpg';
+import aiLectureImg from '../assets/images/campus_ai_lecture_1793980129562.jpg';
+import creativeMarketImg from '../assets/images/campus_creative_market_1793980129791.jpg';
 
 export interface CoverPreset {
   key: string;
@@ -17,6 +22,17 @@ export const COVER_PRESETS: CoverPreset[] = [
   { key: 'gala', label: '星光迎新晚会', subtitle: '礼堂舞台 · 节目海选' },
 ];
 
+const PRESET_PHOTO_MAP: Record<string, string> = {
+  music: musicFestivalImg,
+  gala: musicFestivalImg,
+  basketball: basketballGameImg,
+  design: designExhibitionImg,
+  photo: designExhibitionImg,
+  lecture: aiLectureImg,
+  debate: aiLectureImg,
+  market: creativeMarketImg,
+};
+
 interface CoverArtworkProps {
   cover: string;
   title?: string;
@@ -30,15 +46,16 @@ export const CoverArtwork: React.FC<CoverArtworkProps> = ({
 }) => {
   const [imgError, setImgError] = useState(false);
 
-  const isUrlOrData =
-    (cover.startsWith('data:image/') || cover.startsWith('http') || cover.startsWith('/')) &&
-    !imgError;
+  const resolvedPhotoSrc =
+    cover.startsWith('data:image/') || cover.startsWith('http') || cover.startsWith('/')
+      ? cover
+      : PRESET_PHOTO_MAP[cover];
 
-  if (isUrlOrData) {
+  if (resolvedPhotoSrc && !imgError) {
     return (
       <div className={`relative overflow-hidden bg-[#EAE9E7] ${className}`}>
         <img
-          src={cover}
+          src={resolvedPhotoSrc}
           alt={title}
           referrerPolicy="no-referrer"
           onError={() => setImgError(true)}

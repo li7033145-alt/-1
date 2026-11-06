@@ -13,11 +13,13 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { ActivityCategory, PublishFormData } from '../types/activity';
+import { CAMPUS_LIST } from '../data/initialData';
 import { COVER_PRESETS, CoverArtwork } from './CoverArtwork';
 import { formatDateTimeRange, validatePublishForm } from '../utils/activityRules';
 
 interface PublishPageProps {
   currentCampus: string;
+  currentSubCampus?: string;
   initialDraft?: PublishFormData | null;
   mode: 'form' | 'preview' | 'success';
   previewData?: PublishFormData | null;
@@ -51,6 +53,7 @@ const DEFAULT_FORM: PublishFormData = {
   regStartClock: '09:00',
   regDeadlineDate: '2026-11-14',
   regDeadlineClock: '22:00',
+  subCampus: '清远校区',
   location: '',
   organizer: '',
   capacity: '100',
@@ -60,6 +63,7 @@ const DEFAULT_FORM: PublishFormData = {
 
 export const PublishPage: React.FC<PublishPageProps> = ({
   currentCampus,
+  currentSubCampus,
   initialDraft,
   mode,
   previewData,
@@ -71,7 +75,17 @@ export const PublishPage: React.FC<PublishPageProps> = ({
   onGoToMyPublished,
   onGoHome,
 }) => {
-  const [form, setForm] = useState<PublishFormData>(() => initialDraft || DEFAULT_FORM);
+  const campusInfo =
+    CAMPUS_LIST.find((c) => c.name === currentCampus) || CAMPUS_LIST[0];
+  const subCampusList = campusInfo.subCampuses || ['清远校区', '广州校区'];
+  const defaultSub =
+    currentSubCampus && currentSubCampus !== '全部校区'
+      ? currentSubCampus
+      : subCampusList[0];
+
+  const [form, setForm] = useState<PublishFormData>(
+    () => initialDraft || { ...DEFAULT_FORM, subCampus: defaultSub }
+  );
   const [errors, setErrors] = useState<Partial<Record<keyof PublishFormData, string>>>({});
   const [draftSavedToast, setDraftSavedToast] = useState(false);
 
@@ -217,6 +231,7 @@ export const PublishPage: React.FC<PublishPageProps> = ({
             <div className="flex items-center justify-between gap-2 text-xs">
               <span className="text-[#9A8984] font-medium">
                 {previewData.category} · {currentCampus}
+                {previewData.subCampus ? ` (${previewData.subCampus})` : ''}
               </span>
               <span className="text-[#FF5A4F] font-semibold">报名中（预览）</span>
             </div>
@@ -546,6 +561,29 @@ export const PublishPage: React.FC<PublishPageProps> = ({
           </div>
 
           <div>
+            <label className="block text-xs font-semibold text-[#171717] mb-1.5">
+              所属校区 <span className="text-[#FF5A4F]">*</span>
+            </label>
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              {subCampusList.map((sub) => {
+                const active = (form.subCampus || subCampusList[0]) === sub;
+                return (
+                  <button
+                    key={sub}
+                    type="button"
+                    onClick={() => updateField('subCampus', sub)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                      active
+                        ? 'bg-[#FF5A4F] text-white'
+                        : 'bg-[#F7F7F5] text-[#514744] hover:text-[#171717]'
+                    }`}
+                  >
+                    {sub}
+                  </button>
+                );
+              })}
+            </div>
+
             <label htmlFor="pub-location" className="block text-xs font-semibold text-[#171717] mb-1.5">
               活动地点 <span className="text-[#FF5A4F]">*</span>
             </label>

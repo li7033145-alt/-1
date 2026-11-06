@@ -14,8 +14,10 @@ import {
   X,
   Copy,
   Check,
+  Plus,
+  MessageSquareHeart,
 } from 'lucide-react';
-import { Activity, UserProfile } from '../types/activity';
+import { Activity, BuddyPost, BuddyTag, UserProfile } from '../types/activity';
 import { DEMO_NOW_ISO } from '../data/initialData';
 import {
   computeActivityStatus,
@@ -28,27 +30,60 @@ import { CoverArtwork } from './CoverArtwork';
 interface ActivityDetailPageProps {
   activity: Activity;
   userProfile: UserProfile;
+  buddyPosts: BuddyPost[];
   onBack: () => void;
   onToggleFavorite: (activityId: string) => void;
   onRegisterSuccess: (
     activityId: string,
     form: { attendeeName: string; studentId: string; phone: string; department: string; note?: string }
   ) => void;
+  onToggleJoinBuddy: (buddyId: string) => void;
+  onCreateBuddyPost: (data: {
+    activityId: string;
+    activityTitle: string;
+    activityStartTime: string;
+    campus: string;
+    subCampus: string;
+    tag: BuddyTag;
+    title: string;
+    description: string;
+    meetingPoint: string;
+    maxCount: number;
+    contactCode: string;
+  }) => void;
   onGoToMyRegistrations: () => void;
 }
+
+const BUDDY_TAGS: BuddyTag[] = ['同去现场', '组队参赛', '约拍互勉', '跨校区同行'];
 
 export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
   activity,
   userProfile,
+  buddyPosts,
   onBack,
   onToggleFavorite,
   onRegisterSuccess,
+  onToggleJoinBuddy,
+  onCreateBuddyPost,
   onGoToMyRegistrations,
 }) => {
   const [showRegisterSheet, setShowRegisterSheet] = useState(false);
   const [showShareSheet, setShowShareSheet] = useState(false);
+  const [showCreateBuddySheet, setShowCreateBuddySheet] = useState(false);
   const [copiedShare, setCopiedShare] = useState(false);
+  const [copiedBuddyId, setCopiedBuddyId] = useState<string | null>(null);
   const [justRegisteredBanner, setJustRegisteredBanner] = useState(false);
+
+  // Create buddy form state
+  const [buddyTag, setBuddyTag] = useState<BuddyTag>('同去现场');
+  const [buddyTitle, setBuddyTitle] = useState('');
+  const [buddyDesc, setBuddyDesc] = useState('');
+  const [buddyMeetingPoint, setBuddyMeetingPoint] = useState(`${activity.location}入口`);
+  const [buddyMaxCount, setBuddyMaxCount] = useState(4);
+  const [buddyContact, setBuddyContact] = useState(`微信：${userProfile.phone}（备注：${activity.title}搭子）`);
+  const [buddyError, setBuddyError] = useState('');
+
+  const activityBuddies = buddyPosts.filter((b) => b.activityId === activity.id);
 
   const [attendeeName, setAttendeeName] = useState(userProfile.nickname);
   const [studentId, setStudentId] = useState(userProfile.studentId);
@@ -88,6 +123,37 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
     navigator.clipboard?.writeText(shareText).catch(() => {});
     setCopiedShare(true);
     setTimeout(() => setCopiedShare(false), 2000);
+  };
+
+  const handleCopyBuddyContact = (id: string, code: string) => {
+    navigator.clipboard?.writeText(code).catch(() => {});
+    setCopiedBuddyId(id);
+    setTimeout(() => setCopiedBuddyId(null), 2000);
+  };
+
+  const handleCreateBuddySubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!buddyTitle.trim() || !buddyDesc.trim() || !buddyContact.trim()) {
+      setBuddyError('请完整填写结伴标题、结伴说明和联系暗号');
+      return;
+    }
+    setBuddyError('');
+    onCreateBuddyPost({
+      activityId: activity.id,
+      activityTitle: activity.title,
+      activityStartTime: activity.startTime,
+      campus: activity.campus,
+      subCampus: activity.subCampus || '清远校区',
+      tag: buddyTag,
+      title: buddyTitle.trim(),
+      description: buddyDesc.trim(),
+      meetingPoint: buddyMeetingPoint.trim() || `${activity.location}入口`,
+      maxCount: buddyMaxCount,
+      contactCode: buddyContact.trim(),
+    });
+    setBuddyTitle('');
+    setBuddyDesc('');
+    setShowCreateBuddySheet(false);
   };
 
   // Bottom primary button configuration per state A / B / C / D / E
@@ -250,6 +316,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
           <div className="flex items-center justify-between gap-2 text-xs">
             <span className="text-[#9A8984] font-medium">
               {activity.category} · {activity.campus}
+              {activity.subCampus ? ` (${activity.subCampus})` : ''}
             </span>
             <span
               className={`font-semibold ${
@@ -356,6 +423,160 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                 </span>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* 同场找搭子 · 结伴同行模块 */}
+        <section
+          aria-label="同场找搭子与结伴同行"
+          className="bg-white rounded-[18px] p-4 border border-[#F0EEEC]"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h2 className="text-[16px] font-bold text-[#171717]">同场找搭子 · 结伴同行</h2>
+                <span className="text-xs font-semibold text-[#FF5A4F] tabular-nums">
+                  ({activityBuddies.length})
+                </span>
+              </div>
+              <p className="text-xs text-[#9A8984] mt-0.5">
+                找同好一起去现场、跨专业组队或互拍返图
+              </p>
+            </div>
+            {status !== 'ended' && (
+              <button
+                type="button"
+                onClick={() => setShowCreateBuddySheet(true)}
+                className="px-3 py-1.5 rounded-full bg-[#FFF0ED] text-[#FF5A4F] text-xs font-semibold flex items-center gap-1 shrink-0 active:scale-95 transition-transform"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>发起结伴</span>
+              </button>
+            )}
+          </div>
+
+          <div className="mt-3.5 space-y-3">
+            {activityBuddies.map((post) => {
+              const isFull = post.currentCount >= post.maxCount;
+              return (
+                <div
+                  key={post.id}
+                  className="p-3.5 rounded-[16px] bg-[#F7F7F5] border border-[#F0EEEC] space-y-2.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="w-7 h-7 rounded-full bg-[#FFF0ED] text-[#FF5A4F] font-bold text-xs flex items-center justify-center shrink-0">
+                        {post.authorName.slice(0, 1)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-bold text-[#171717] truncate">
+                            {post.authorName}
+                          </span>
+                          <span className="text-[11px] text-[#9A8984] truncate">
+                            {post.authorGrade} · {post.authorDepartment.split('·')[0].trim()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[11px] font-semibold text-[#FF5A4F] bg-white px-2 py-0.5 rounded-md border border-[#FF5A4F]/20 shrink-0">
+                      {post.tag}
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-[#171717]">{post.title}</h3>
+                    <p className="text-xs text-[#514744] mt-1 leading-relaxed">
+                      {post.description}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-[11px] text-[#9A8984]">
+                    <MapPin className="w-3 h-3 text-[#FF5A4F] shrink-0" />
+                    <span className="truncate">集合：{post.meetingPoint}</span>
+                  </div>
+
+                  {/* 已加入或我发起的：展示联系暗号 */}
+                  {(post.isJoined || post.isMine) && (
+                    <div className="p-2.5 rounded-xl bg-white border border-[#F0EEEC] flex items-center justify-between gap-2">
+                      <div className="min-w-0 text-xs">
+                        <span className="text-[#9A8984] block text-[11px]">
+                          结伴联系暗号（已解锁）
+                        </span>
+                        <span className="font-semibold text-[#171717] truncate block mt-0.5">
+                          {post.contactCode}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleCopyBuddyContact(post.id, post.contactCode)}
+                        className="px-2.5 py-1 rounded-lg bg-[#FFF0ED] text-[#FF5A4F] text-[11px] font-semibold shrink-0"
+                      >
+                        {copiedBuddyId === post.id ? '已复制' : '复制'}
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="pt-2 border-t border-[#F0EEEC] flex items-center justify-between gap-2">
+                    <div className="text-xs text-[#514744] tabular-nums min-w-0 truncate">
+                      <span className="font-semibold text-[#171717]">
+                        {post.currentCount}/{post.maxCount}人
+                      </span>
+                      <span className="text-[#9A8984] ml-1.5">
+                        已加入：{post.participants.join('、')}
+                      </span>
+                    </div>
+
+                    {post.isMine ? (
+                      <span className="text-xs font-semibold text-[#FF5A4F] shrink-0">
+                        我发起的
+                      </span>
+                    ) : post.isJoined ? (
+                      <button
+                        type="button"
+                        onClick={() => onToggleJoinBuddy(post.id)}
+                        className="px-3 py-1 rounded-full bg-white border border-[#F0EEEC] text-xs font-medium text-[#514744] hover:text-[#FF5A4F] shrink-0"
+                      >
+                        已加入 · 退出
+                      </button>
+                    ) : isFull ? (
+                      <span className="px-3 py-1 rounded-full bg-[#EAE9E7] text-[#99938F] text-xs font-semibold shrink-0">
+                        已满员
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onToggleJoinBuddy(post.id)}
+                        className="px-3.5 py-1 rounded-full bg-[#FF5A4F] text-white text-xs font-semibold shrink-0 active:scale-95 transition-transform"
+                      >
+                        加入结伴
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+
+            {activityBuddies.length === 0 && (
+              <div className="p-5 rounded-[16px] bg-[#F7F7F5] text-center space-y-2">
+                <MessageSquareHeart className="w-6 h-6 text-[#FF5A4F] mx-auto" />
+                <p className="text-xs font-semibold text-[#171717]">
+                  这场活动还没有同学发起结伴
+                </p>
+                <p className="text-[11px] text-[#9A8984]">
+                  发起第一个搭子招募，认识志同道合的新朋友吧！
+                </p>
+                {status !== 'ended' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCreateBuddySheet(true)}
+                    className="mt-1 px-4 py-1.5 rounded-full bg-[#FF5A4F] text-white text-xs font-semibold"
+                  >
+                    发起本场结伴
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </section>
 
@@ -663,6 +884,158 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                 </>
               )}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 发起结伴弹窗 Sheet */}
+      {showCreateBuddySheet && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="发起活动结伴"
+          className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
+        >
+          <div className="w-full max-w-[430px] bg-white rounded-t-[24px] p-5 space-y-3.5 max-h-[88dvh] overflow-y-auto no-scrollbar">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-[18px] font-bold text-[#171717]">发起同场结伴</h3>
+                <p className="text-xs text-[#9A8984] mt-0.5 truncate">
+                  关联活动：{activity.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowCreateBuddySheet(false)}
+                aria-label="关闭发起结伴弹窗"
+                className="w-8 h-8 rounded-full bg-[#F7F7F5] flex items-center justify-center text-[#514744]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateBuddySubmit} className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-[#171717] mb-1.5">
+                  结伴主题标签
+                </label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {BUDDY_TAGS.map((t) => {
+                    const active = buddyTag === t;
+                    return (
+                      <button
+                        key={t}
+                        type="button"
+                        onClick={() => setBuddyTag(t)}
+                        className={`py-1.5 rounded-xl text-xs font-semibold transition-colors ${
+                          active
+                            ? 'bg-[#FF5A4F] text-white'
+                            : 'bg-[#F7F7F5] text-[#514744]'
+                        }`}
+                      >
+                        {t}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#171717] mb-1">
+                  结伴一句话标题 <span className="text-[#FF5A4F]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={buddyTitle}
+                  onChange={(e) => setBuddyTitle(e.target.value)}
+                  placeholder="例如：草坪前排一起听歌合唱，带了野餐垫！"
+                  aria-label="结伴一句话标题"
+                  className="w-full h-10 px-3 rounded-xl bg-[#F7F7F5] text-sm text-[#171717] border border-[#F0EEEC] focus:outline-none focus:border-[#FF5A4F]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#171717] mb-1">
+                  详细说明与期待搭子 <span className="text-[#FF5A4F]">*</span>
+                </label>
+                <textarea
+                  rows={2}
+                  value={buddyDesc}
+                  onChange={(e) => setBuddyDesc(e.target.value)}
+                  placeholder="介绍一下你的计划、出发时间或组队分工需求..."
+                  aria-label="详细说明与期待搭子"
+                  className="w-full p-3 rounded-xl bg-[#F7F7F5] text-sm text-[#171717] border border-[#F0EEEC] focus:outline-none focus:border-[#FF5A4F] resize-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#171717] mb-1">
+                    目标总人数（含自己）
+                  </label>
+                  <div className="flex items-center gap-1.5">
+                    {[2, 3, 4, 6].map((num) => (
+                      <button
+                        key={num}
+                        type="button"
+                        onClick={() => setBuddyMaxCount(num)}
+                        className={`flex-1 h-9 rounded-xl text-xs font-semibold tabular-nums ${
+                          buddyMaxCount === num
+                            ? 'bg-[#FFF0ED] text-[#FF5A4F] border border-[#FF5A4F]'
+                            : 'bg-[#F7F7F5] text-[#514744]'
+                        }`}
+                      >
+                        {num}人
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-[#171717] mb-1">
+                    集合地点
+                  </label>
+                  <input
+                    type="text"
+                    value={buddyMeetingPoint}
+                    onChange={(e) => setBuddyMeetingPoint(e.target.value)}
+                    aria-label="集合地点"
+                    className="w-full h-9 px-3 rounded-xl bg-[#F7F7F5] text-xs text-[#171717] border border-[#F0EEEC]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#171717] mb-1">
+                  联系微信号 / 进群口令（仅加入成员可见） <span className="text-[#FF5A4F]">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={buddyContact}
+                  onChange={(e) => setBuddyContact(e.target.value)}
+                  aria-label="联系微信号或进群口令"
+                  className="w-full h-10 px-3 rounded-xl bg-[#F7F7F5] text-xs text-[#171717] border border-[#F0EEEC]"
+                />
+              </div>
+
+              {buddyError && <p className="text-xs text-[#FF5A4F]">{buddyError}</p>}
+
+              <div className="pt-2 flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateBuddySheet(false)}
+                  className="w-1/3 h-[48px] rounded-[24px] bg-[#F7F7F5] text-[#514744] font-semibold text-sm"
+                >
+                  取消
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 h-[48px] rounded-[24px] bg-[#FF5A4F] text-white font-semibold text-[15px]"
+                >
+                  发布结伴招募
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
