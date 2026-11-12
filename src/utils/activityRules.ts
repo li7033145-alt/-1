@@ -127,6 +127,36 @@ export function applyRegistration(
   return updated;
 }
 
+export function canUserCancelRegistration(
+  activity: Activity,
+  nowIso: string
+): { allowed: boolean; reason?: string } {
+  if (!activity.isRegistered) {
+    return { allowed: false, reason: '您尚未报名该活动' };
+  }
+  const computedStatus = computeActivityStatus(activity, nowIso);
+  if (computedStatus === 'ended') {
+    return { allowed: false, reason: '活动已结束，无法取消报名' };
+  }
+  return { allowed: true };
+}
+
+export function cancelRegistration(activity: Activity, nowIso: string): Activity {
+  const check = canUserCancelRegistration(activity, nowIso);
+  if (!check.allowed) {
+    return activity;
+  }
+  const nextCount = Math.max(0, activity.registeredCount - 1);
+  const updated: Activity = {
+    ...activity,
+    registeredCount: nextCount,
+    isRegistered: false,
+    registrationRecord: undefined,
+  };
+  updated.status = computeActivityStatus(updated, nowIso);
+  return updated;
+}
+
 export interface ActivityFilterCriteria {
   campus: string;
   subCampus?: string;
@@ -217,6 +247,55 @@ export function getMyRegistrationPhase(
     return 'ongoing';
   }
   return 'upcoming';
+}
+
+export function validatePublishStep(
+  form: PublishFormData,
+  step: 1 | 2 | 3 | 4
+): {
+  valid: boolean;
+  errors: Partial<Record<keyof PublishFormData, string>>;
+} {
+  const errors: Partial<Record<keyof PublishFormData, string>> = {};
+
+  if (step === 1) {
+    if (!form.subCampus?.trim()) errors.subCampus = '请选择所属校区';
+    if (!form.category) errors.category = '请选择活动类型';
+  } else if (step === 2) {
+    if (!form.title.trim()) errors.title = '请填写活动名称';
+    if (!form.cover.trim()) errors.cover = '请选择或上传活动封面';
+    if (!form.description.trim() || form.description.trim().length < 10) {
+      errors.description = '请填写不少于 10 个字的活动介绍';
+    }
+  } else if (step === 3) {
+    if (!form.startDate || !form.startClock) errors.startDate = '请设置活动开始时间';
+    if (!form.endDate || !form.endClock) errors.endDate = '请设置活动结束时间';
+    if (!form.regStartDate || !form.regStartClock) errors.regStartDate = '请设置报名开始时间';
+    if (!form.regDeadlineDate || !form.regDeadlineClock)
+      errors.regDeadlineDate = '请设置报名截止时间';
+    if (!form.location.trim()) errors.location = '请填写活动具体地点';
+
+    if (form.startDate && form.startClock && form.endDate && form.endClock) {
+      const startMs = new Date(`${form.startDate}T${form.startClock}:00`).getTime();
+      const endMs = new Date(`${form.endDate}T${form.endClock}:00`).getTime();
+      if (endMs <= startMs) {
+        errors.endDate = '活动结束时间必须晚于开始时间';
+      }
+    }
+  } else if (step === 4) {
+    if (!form.organizer.trim()) errors.organizer = '请填写主办方名称';
+    const capNum = Number(form.capacity);
+    if (!form.capacity || Number.isNaN(capNum) || capNum < 1 || capNum > 10000) {
+      errors.capacity = '请输入有效的人数上限（1-10000）';
+    }
+    if (!form.requirementsText.trim()) errors.requirementsText = '请填写参与要求';
+    if (!form.contact.trim()) errors.contact = '请填写负责人联系方式';
+  }
+
+  return {
+    valid: Object.keys(errors).length === 0,
+    errors,
+  };
 }
 
 export function validatePublishForm(form: PublishFormData): {

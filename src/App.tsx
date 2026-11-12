@@ -21,6 +21,7 @@ import {
 } from './data/initialData';
 import {
   applyRegistration,
+  cancelRegistration,
   computeActivityStatus,
   toggleJoinBuddyPost,
 } from './utils/activityRules';
@@ -31,6 +32,7 @@ import { ActivitiesPage } from './components/ActivitiesPage';
 import { ActivityDetailPage } from './components/ActivityDetailPage';
 import { PublishPage } from './components/PublishPage';
 import { ProfilePage, ProfileSubPage } from './components/ProfilePage';
+import { AuthScreenPhase, SplashAndAuthPage } from './components/SplashAndAuthPage';
 
 const STORAGE_KEYS = {
   ACTIVITIES: 'yichang_activities_v3',
@@ -39,22 +41,34 @@ const STORAGE_KEYS = {
   CAMPUS: 'yichang_campus_v1',
   SUB_CAMPUS: 'yichang_subcampus_v1',
   ONBOARDED: 'yichang_onboarded_v1',
+  AUTHENTICATED: 'yichang_auth_v1',
 };
 
 export default function App() {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Check ?autostart=1 to optionally skip initial campus selection screen
+  // Check ?autostart=1 to optionally skip initial splash/auth/campus screens
   const isAutoStart =
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).get('autostart') === '1';
+
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (isAutoStart) return true;
+    try {
+      return localStorage.getItem(STORAGE_KEYS.AUTHENTICATED) === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const [authScreenPhase, setAuthScreenPhase] = useState<AuthScreenPhase>('splash');
 
   const [hasSelectedCampus, setHasSelectedCampus] = useState<boolean>(() => {
     if (isAutoStart) return true;
     try {
       return localStorage.getItem(STORAGE_KEYS.ONBOARDED) === 'true';
     } catch {
-      return false;
+      return true;
     }
   });
 
@@ -117,7 +131,6 @@ export default function App() {
   );
   const [showCampusModal, setShowCampusModal] = useState<boolean>(false);
   const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
-  const [mobileShowArtboard, setMobileShowArtboard] = useState<boolean>(false);
 
   // Activities Page filter state
   const [selectedCategory, setSelectedCategory] = useState<ActivityCategory>('全部');
@@ -185,6 +198,8 @@ export default function App() {
       scrollContainerRef.current.scrollTop = 0;
     }
   }, [
+    isAuthenticated,
+    authScreenPhase,
     activeTab,
     activitiesViewMode,
     activeDetailId,
@@ -192,8 +207,35 @@ export default function App() {
     publishMode,
     profileSubPage,
     hasSelectedCampus,
-    mobileShowArtboard,
   ]);
+
+  const handleLoginOrRegisterSuccess = (
+    nextProfile: UserProfile,
+    campusName: string,
+    subCampusName: string
+  ) => {
+    setUserProfile(nextProfile);
+    setCurrentCampus(campusName || DEFAULT_CAMPUS);
+    setCurrentSubCampus(subCampusName || DEFAULT_SUB_CAMPUS);
+    setIsAuthenticated(true);
+    setHasSelectedCampus(true);
+    try {
+      localStorage.setItem(STORAGE_KEYS.AUTHENTICATED, 'true');
+      localStorage.setItem(STORAGE_KEYS.ONBOARDED, 'true');
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleOpenAuthScreen = (phase: AuthScreenPhase = 'login') => {
+    setAuthScreenPhase(phase);
+    setIsAuthenticated(false);
+    try {
+      localStorage.removeItem(STORAGE_KEYS.AUTHENTICATED);
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSelectCampus = (campusName: string, subCampus?: string) => {
     const nextSub = subCampus || DEFAULT_SUB_CAMPUS;
@@ -217,7 +259,6 @@ export default function App() {
     setHasSelectedCampus(true);
     setActiveDetailId(null);
     setShowCampusModal(false);
-    setMobileShowArtboard(false);
     setActiveTab(tab);
     if (tab === 'publish') {
       setPublishMode('form');
@@ -267,7 +308,6 @@ export default function App() {
           : ['艺术', '体育', '讲座'];
       const exists = current.includes(interest);
       if (exists && current.length === 1) {
-        // Keep at least one interest tag active for persona matching
         return prev;
       }
       const nextInterests: InterestPreference[] = exists
@@ -316,10 +356,18 @@ export default function App() {
       phone: string;
       department: string;
       note?: string;
+      registrationMode?: 'solo' | 'group';
+      buddyId?: string;
     }
   ) => {
     setActivities((prev) =>
       prev.map((act) => (act.id === activityId ? applyRegistration(act, form, DEMO_NOW_ISO) : act))
+    );
+  };
+
+  const handleCancelRegistration = (activityId: string) => {
+    setActivities((prev) =>
+      prev.map((act) => (act.id === activityId ? cancelRegistration(act, DEMO_NOW_ISO) : act))
     );
   };
 
@@ -433,6 +481,7 @@ export default function App() {
     : null;
 
   const showBottomNav =
+    isAuthenticated &&
     hasSelectedCampus &&
     !showCampusModal &&
     !activeDetailActivity &&
@@ -441,14 +490,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#ECEAE6] flex items-center justify-center">
-      {/* 移动端主画布容器（390x844 标准尺寸，无手机边框、无顶部状态栏、无滚动条） */}
-      <div className="w-full max-w-[430px] sm:w-[390px] h-[100dvh] sm:h-[844px] bg-[#F7F7F5] flex flex-col overflow-hidden relative shrink-0">
+      {/* 移动端主画布容器（390x844 标准尺寸） */}
+      <div className="w-full max-w-[430px] sm:w-[390px] h-[100dvh] sm:h-[844px] bg-[#F4F2EE] flex flex-col overflow-hidden relative shrink-0">
         {/* 可纵向滚动的页面主体视口 */}
         <main
           ref={scrollContainerRef}
           className="flex-1 overflow-y-auto overflow-x-hidden no-scrollbar relative"
         >
-          {!hasSelectedCampus || showCampusModal ? (
+          {!isAuthenticated ? (
+            <SplashAndAuthPage
+              initialPhase={authScreenPhase}
+              currentCampus={currentCampus}
+              currentSubCampus={currentSubCampus}
+              userProfile={userProfile}
+              onLoginSuccess={handleLoginOrRegisterSuccess}
+            />
+          ) : !hasSelectedCampus || showCampusModal ? (
             <CampusSelectorPage
               currentCampus={currentCampus}
               currentSubCampus={currentSubCampus}
@@ -464,6 +521,7 @@ export default function App() {
               onBack={() => setActiveDetailId(null)}
               onToggleFavorite={handleToggleFavorite}
               onRegisterSuccess={handleRegisterSuccess}
+              onCancelRegistration={handleCancelRegistration}
               onToggleJoinBuddy={handleToggleJoinBuddy}
               onCreateBuddyPost={handleCreateBuddyPost}
               onGoToMyRegistrations={() => {
@@ -486,6 +544,7 @@ export default function App() {
               onJumpToCategory={handleJumpToCategory}
               onJumpToBuddySquare={handleJumpToBuddySquare}
               onToggleJoinBuddy={handleToggleJoinBuddy}
+              onOpenAuthModal={() => handleOpenAuthScreen('login')}
             />
           ) : activeTab === 'activities' ? (
             <ActivitiesPage
@@ -549,6 +608,7 @@ export default function App() {
               }}
               onOpenCampusSelector={() => setShowCampusModal(true)}
               onSelectActivity={(id) => setActiveDetailId(id)}
+              onCancelRegistration={handleCancelRegistration}
               onToggleFavorite={handleToggleFavorite}
               onToggleJoinBuddy={handleToggleJoinBuddy}
               onEditPublishedActivity={(formData) => {
@@ -564,11 +624,12 @@ export default function App() {
                 setActivitiesViewMode('buddies');
                 setActiveTab('activities');
               }}
+              onOpenAuthScreen={handleOpenAuthScreen}
             />
           )}
         </main>
 
-        {/* 固定底部导航栏（应用全新原创几何+负形图标） */}
+        {/* 固定底部导航栏 */}
         {showBottomNav && (
           <BottomNav activeTab={activeTab} onSelectTab={handleSelectTab} />
         )}

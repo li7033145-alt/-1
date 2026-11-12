@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import musicFestivalImg from '../assets/images/campus_music_festival_1793980126412.jpg';
-import basketballGameImg from '../assets/images/campus_basketball_game_1793980127239.jpg';
-import designExhibitionImg from '../assets/images/campus_design_exhibition_1793980127841.jpg';
-import aiLectureImg from '../assets/images/campus_ai_lecture_1793980129562.jpg';
-import creativeMarketImg from '../assets/images/campus_creative_market_1793980129791.jpg';
+import musicFestivalImg from '../assets/images/gdcp_music_festival_1794495036118.jpg';
+import basketballGameImg from '../assets/images/gdcp_basketball_court_1794495035319.jpg';
+import designExhibitionImg from '../assets/images/gdcp_campus_design_1794495032455.jpg';
+import aiLectureImg from '../assets/images/gdcp_lecture_hall_1794495038600.jpg';
+import creativeMarketImg from '../assets/images/gdcp_library_market_1794495040621.jpg';
+import photoArchExhibitImg from '../assets/images/gdcp_photo_arch_exhibit_1794495042280.jpg';
+import debateFinalsImg from '../assets/images/gdcp_debate_finals_1794495067233.jpg';
+import campusGalaImg from '../assets/images/gdcp_campus_gala_1794495068184.jpg';
 
 export interface CoverPreset {
   key: string;
@@ -12,24 +15,24 @@ export interface CoverPreset {
 }
 
 export const COVER_PRESETS: CoverPreset[] = [
-  { key: 'music', label: '草坪音乐节', subtitle: '舞台灯光 · 乐队演出' },
-  { key: 'photo', label: '光影摄影展', subtitle: '画廊展厅 · 纪实影像' },
-  { key: 'basketball', label: '热血篮球赛', subtitle: '落日球场 · 院系对抗' },
-  { key: 'design', label: '校园设计赛', subtitle: '创意工坊 · 模型作品' },
-  { key: 'market', label: '林荫创意市集', subtitle: '手作摊位 · 社团文创' },
-  { key: 'lecture', label: '前沿学术讲堂', subtitle: '报告大厅 · 思想交锋' },
-  { key: 'debate', label: '思辨华语辩论', subtitle: '唇枪舌剑 · 决赛现场' },
-  { key: 'gala', label: '星光迎新晚会', subtitle: '礼堂舞台 · 节目海选' },
+  { key: 'music', label: '南区草坪音乐节', subtitle: '清远校区 · 乐队现场' },
+  { key: 'photo', label: '阳光展厅与古建展', subtitle: '图书馆一楼 · 榫卯光影' },
+  { key: 'basketball', label: '北区灯光篮球场', subtitle: '广建院球场 · 院系对抗' },
+  { key: 'design', label: '建艺设计作品展', subtitle: '建筑模型 · 创客路演' },
+  { key: 'market', label: '图书馆林荫市集', subtitle: '银杏大道 · 社团手作' },
+  { key: 'lecture', label: '建院名师报告厅', subtitle: 'BIM数字建造 · 学术讲堂' },
+  { key: 'debate', label: '学生活动中心辩论', subtitle: '建言杯决赛 · 思辨交锋' },
+  { key: 'gala', label: '大礼堂迎新晚会', subtitle: '筑梦新程 · 舞台汇演' },
 ];
 
 const PRESET_PHOTO_MAP: Record<string, string> = {
   music: musicFestivalImg,
-  gala: musicFestivalImg,
+  gala: campusGalaImg,
   basketball: basketballGameImg,
   design: designExhibitionImg,
-  photo: designExhibitionImg,
+  photo: photoArchExhibitImg,
   lecture: aiLectureImg,
-  debate: aiLectureImg,
+  debate: debateFinalsImg,
   market: creativeMarketImg,
 };
 

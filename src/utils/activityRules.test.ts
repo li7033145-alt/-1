@@ -347,3 +347,77 @@ test('getDailyCuratedActivities recommends 3 activities matching sub-campus and 
   assert.equal(gzRecs[2].primaryInterest, '讲座');
 });
 
+test('cancelRegistration decrements registeredCount, clears registrationRecord, and reopens full activity', async () => {
+  const { cancelRegistration, canUserCancelRegistration } = await import('./activityRules');
+  const nearFull = makeBaseActivity({ capacity: 150, registeredCount: 149 });
+  const registeredAct = applyRegistration(
+    nearFull,
+    {
+      attendeeName: '林晓阳',
+      studentId: '2024081036',
+      phone: '13826049921',
+      department: '建筑信息工程学院',
+      registrationMode: 'group',
+    },
+    REF_NOW
+  );
+  assert.equal(registeredAct.isRegistered, true);
+  assert.equal(registeredAct.registeredCount, 150);
+  assert.equal(registeredAct.status, 'full');
+
+  const canCancel = canUserCancelRegistration(registeredAct, REF_NOW);
+  assert.equal(canCancel.allowed, true);
+
+  const canceledAct = cancelRegistration(registeredAct, REF_NOW);
+  assert.equal(canceledAct.isRegistered, false);
+  assert.equal(canceledAct.registeredCount, 149);
+  assert.equal(canceledAct.status, 'open');
+  assert.equal(canceledAct.registrationRecord, undefined);
+});
+
+test('validatePublishStep validates each step of the 4-step publish wizard independently', async () => {
+  const { validatePublishStep } = await import('./activityRules');
+  const draft: PublishFormData = {
+    title: '',
+    cover: 'music',
+    category: '文体',
+    description: '短介绍',
+    startDate: '2026-11-15',
+    startClock: '19:00',
+    endDate: '2026-11-15',
+    endClock: '18:00',
+    regStartDate: '2026-11-04',
+    regStartClock: '09:00',
+    regDeadlineDate: '2026-11-14',
+    regDeadlineClock: '22:00',
+    subCampus: '清远校区',
+    location: '',
+    organizer: '',
+    capacity: '0',
+    requirementsText: '',
+    contact: '',
+  };
+
+  // Step 1 valid
+  assert.equal(validatePublishStep(draft, 1).valid, true);
+
+  // Step 2 invalid (missing title & short description)
+  const step2Res = validatePublishStep(draft, 2);
+  assert.equal(step2Res.valid, false);
+  assert.ok(step2Res.errors.title);
+  assert.ok(step2Res.errors.description);
+
+  // Step 3 invalid (end before start & missing location)
+  const step3Res = validatePublishStep(draft, 3);
+  assert.equal(step3Res.valid, false);
+  assert.ok(step3Res.errors.endDate);
+  assert.ok(step3Res.errors.location);
+
+  // Step 4 invalid (missing organizer, invalid capacity, etc.)
+  const step4Res = validatePublishStep(draft, 4);
+  assert.equal(step4Res.valid, false);
+  assert.ok(step4Res.errors.organizer);
+  assert.ok(step4Res.errors.capacity);
+});
+
+

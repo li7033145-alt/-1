@@ -40,6 +40,8 @@ export interface RegistrationRecord {
   phone: string;
   department: string;
   note?: string;
+  registrationMode?: 'solo' | 'group';
+  buddyId?: string;
 }
 
 export interface Activity {
