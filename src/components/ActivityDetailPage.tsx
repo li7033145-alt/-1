@@ -17,6 +17,7 @@ import {
   Plus,
   UserCheck,
   UserMinus,
+  FileText,
 } from 'lucide-react';
 import { Activity, BuddyPost, BuddyTag, UserProfile } from '../types/activity';
 import { DEMO_NOW_ISO } from '../data/initialData';
@@ -89,12 +90,12 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
   const [justRegisteredBanner, setJustRegisteredBanner] = useState(false);
   const [justCanceledBanner, setJustCanceledBanner] = useState(false);
 
-  // Registration modal state: Solo vs Group mode
+  // Registration modal state: Solo vs Group (linked buddy) mode
   const [registrationMode, setRegistrationMode] = useState<'solo' | 'group'>('solo');
   const [groupSubMode, setGroupSubMode] = useState<'join-existing' | 'create-new'>('join-existing');
   const [selectedExistingBuddyId, setSelectedExistingBuddyId] = useState<string>('');
 
-  // Inline group creation fields inside registration sheet
+  // Inline group creation fields inside registration modal
   const [regBuddyTag, setRegBuddyTag] = useState<BuddyTag>('同去现场');
   const [regBuddyTitle, setRegBuddyTitle] = useState<string>('');
   const [regBuddyMeetingPoint, setRegBuddyMeetingPoint] = useState<string>(
@@ -102,7 +103,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
   );
   const [regBuddyMaxCount, setRegBuddyMaxCount] = useState<number>(4);
 
-  // Standalone create buddy sheet state (for post-registration)
+  // Standalone create buddy sheet state
   const [buddyTag, setBuddyTag] = useState<BuddyTag>('同去现场');
   const [buddyTitle, setBuddyTitle] = useState('');
   const [buddyDesc, setBuddyDesc] = useState('');
@@ -131,9 +132,12 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
     Math.round((activity.registeredCount / Math.max(1, activity.capacity)) * 100)
   );
 
-  const openRegisterModal = () => {
+  const openRegisterModal = (defaultMode?: 'solo' | 'group') => {
     setFormError('');
     setJustCanceledBanner(false);
+    if (defaultMode) {
+      setRegistrationMode(defaultMode);
+    }
     if (openActivityBuddies.length > 0 && !selectedExistingBuddyId) {
       setSelectedExistingBuddyId(openActivityBuddies[0].id);
       setGroupSubMode('join-existing');
@@ -152,7 +156,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
 
     if (registrationMode === 'group') {
       if (groupSubMode === 'join-existing' && !selectedExistingBuddyId) {
-        setFormError('请选择一个要加入的同场搭子小队，或切换为发起新组团');
+        setFormError('请选择一个要关联的同场搭子小队，或切换为发起新组团');
         return;
       }
       if (groupSubMode === 'create-new' && !regBuddyTitle.trim()) {
@@ -163,7 +167,6 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
 
     setFormError('');
 
-    // If group registration, also join or create the buddy post
     if (registrationMode === 'group') {
       if (groupSubMode === 'join-existing' && selectedExistingBuddyId) {
         const target = activityBuddies.find((b) => b.id === selectedExistingBuddyId);
@@ -252,13 +255,14 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
     buddySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Bottom primary button configuration per state A / B / C / D / E
+  // Bottom bar primary action button
   const renderPrimaryActionButton = () => {
     if (activity.isRegistered && status !== 'ended') {
       return (
         <div className="flex-1 flex items-center gap-2">
           <button
             type="button"
+            data-testid="btn-open-cancel-modal"
             onClick={() => setShowCancelConfirmSheet(true)}
             className="h-[46px] px-3.5 rounded-[8px] bg-[#F7F7F5] border border-[#E6E3DF] text-[#514744] hover:text-[#FF5A4F] hover:border-[#FF5A4F] font-semibold text-xs flex items-center justify-center gap-1 transition-colors shrink-0"
           >
@@ -271,7 +275,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
             className="flex-1 h-[46px] rounded-[8px] bg-[#FFF0ED] border border-[#FF5A4F]/30 text-[#FF5A4F] font-bold text-xs flex items-center justify-center gap-1.5 transition-transform active:scale-[0.99]"
           >
             <Users className="w-4 h-4" />
-            <span>已报名 · 组团/找搭子 ({activityBuddies.length})</span>
+            <span>已报名 · 查看找搭子 ({activityBuddies.length})</span>
           </button>
         </div>
       );
@@ -281,10 +285,11 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
       return (
         <button
           type="button"
-          onClick={openRegisterModal}
+          data-testid="btn-open-register-modal"
+          onClick={() => openRegisterModal('solo')}
           className="flex-1 h-[46px] rounded-[8px] bg-[#FF5A4F] text-white font-bold text-[15px] flex items-center justify-center transition-transform active:scale-[0.99]"
         >
-          立即报名（可选个人 / 组团）
+          立即报名
         </button>
       );
     }
@@ -339,10 +344,10 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
   return (
     <div className="flex flex-col h-full overflow-hidden bg-[#F4F2EE]">
       <div className="flex-1 overflow-y-auto pb-6">
-        {/* 顶部封面 + 返回按钮 + 收藏按钮 */}
-        <div className="relative h-[180px] w-full">
+        {/* 顶部紧凑封面图 + 导航栏（保留充足首屏空间展示核心活动介绍） */}
+        <div className="relative h-[156px] w-full">
           <CoverArtwork cover={activity.cover} title={activity.title} className="w-full h-full" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/45" />
 
           <div className="absolute top-3 left-4 right-4 flex items-center justify-between">
             <button
@@ -369,9 +374,9 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
           </div>
         </div>
 
-        {/* 主体内容：第一屏优先展示活动核心信息与活动介绍 */}
+        {/* 主体内容区：首屏直接展示「核心活动介绍（时间、地点、报名说明）」 */}
         <div className="px-4 -mt-3 relative z-10 space-y-3">
-          {/* 状态 D（已结束）顶部温馨提示栏 */}
+          {/* 状态 D（已结束）提示栏 */}
           {status === 'ended' && (
             <div className="bg-white rounded-[10px] px-4 py-3 border border-[#E6E3DF] flex items-center gap-2.5 text-xs text-[#514744]">
               <AlertCircle className="w-4 h-4 text-[#9A8984] shrink-0" />
@@ -393,20 +398,20 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
             </div>
           )}
 
-          {/* 已报名状态横幅（含查看报名、组团结伴、取消报名入口） */}
+          {/* 已报名状态横幅 */}
           {activity.isRegistered && (
-            <div className="bg-[#FFF0ED] rounded-[10px] p-3.5 border border-[#FF5A4F]/30 space-y-2.5">
+            <div className="bg-[#FFF0ED] rounded-[10px] p-3.5 border border-[#FF5A4F]/30">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2 min-w-0">
                   <CheckCircle2 className="w-4 h-4 text-[#FF5A4F] shrink-0" />
                   <p className="text-xs font-bold text-[#171717] truncate">
                     {justRegisteredBanner ? '报名成功！名额已锁定' : '您已报名本场活动'}
                     {activity.registrationRecord?.registrationMode === 'group'
-                      ? '（组团报名）'
+                      ? '（组团报名 · 已关联搭子）'
                       : '（个人报名）'}
                   </p>
                 </div>
-                <div className="flex items-center gap-2.5 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={onGoToMyRegistrations}
@@ -428,133 +433,130 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
             </div>
           )}
 
-          {/* 板块 1：活动核心概览卡片（第一眼可见） */}
-          <section className="bg-white rounded-[10px] p-4 border border-[#E6E3DF]">
-            <div className="flex items-center justify-between gap-2 text-xs">
-              <span className="text-[#8C7E79] font-medium">
-                {activity.category} · {activity.campus}
-                {activity.subCampus ? ` (${activity.subCampus})` : ''}
-              </span>
-              <span
-                className={`font-bold ${
-                  status === 'open'
-                    ? 'text-[#FF5A4F]'
-                    : status === 'full'
-                    ? 'text-[#514744]'
-                    : 'text-[#9A8984]'
-                }`}
-              >
-                {statusLabel}
-              </span>
+          {/* 首屏核心卡片：标题 + 活动介绍 + 时间 / 地点 / 报名说明 一体化首屏呈现 */}
+          <section
+            aria-label="核心活动介绍"
+            data-testid="activity-intro-section"
+            className="bg-white rounded-[10px] p-4 border border-[#E6E3DF] space-y-3.5"
+          >
+            {/* 分类、校区与状态 */}
+            <div>
+              <div className="flex items-center justify-between gap-2 text-xs">
+                <span className="text-[#8C7E79] font-medium">
+                  {activity.category} · {activity.campus}
+                  {activity.subCampus ? ` (${activity.subCampus})` : ''}
+                </span>
+                <span
+                  className={`px-2 py-0.5 rounded-[6px] font-bold ${
+                    status === 'open'
+                      ? 'bg-[#FFF0ED] text-[#FF5A4F]'
+                      : status === 'full'
+                      ? 'bg-[#F4F2EE] text-[#514744]'
+                      : 'bg-[#F4F2EE] text-[#9A8984]'
+                  }`}
+                >
+                  {statusLabel}
+                </span>
+              </div>
+
+              <h1 className="text-[20px] font-black text-[#171717] mt-1.5 leading-snug">
+                {activity.title}
+              </h1>
             </div>
 
-            <h1 className="text-[20px] font-black text-[#171717] mt-1.5 leading-snug">
-              {activity.title}
-            </h1>
-
-            {/* 报名人数与进度条 */}
-            <div className="mt-3 pt-3 border-t border-[#F0EEEC]">
-              {status === 'ended' ? (
-                <div className="flex items-center justify-between text-xs text-[#514744] tabular-nums">
-                  <span>历史参与统计</span>
-                  <span className="font-bold text-[#171717]">{activity.registeredCount}人已参与</span>
-                </div>
-              ) : (
-                <div>
-                  <div className="flex items-center justify-between text-xs tabular-nums">
-                    <span className="text-[#514744]">
-                      当前报名：
-                      <strong className="text-[#171717]">
-                        {activity.registeredCount}/{activity.capacity} 人
-                      </strong>
-                    </span>
-                    {status === 'open' && (
-                      <span className="text-[#FF5A4F] font-bold">剩余 {remainingSpots} 个名额</span>
-                    )}
-                    {status === 'full' && (
-                      <span className="text-[#9A8984] font-medium">100% 满额</span>
-                    )}
-                    {status === 'closed' && <span className="text-[#9A8984]">报名通道已关闭</span>}
-                    {status === 'upcoming' && (
-                      <span className="text-[#9A8984]">
-                        {formatShortDate(activity.registrationStartTime)} 开放报名
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-1.5 h-1.5 w-full rounded-[4px] bg-[#F0EEEC] overflow-hidden">
-                    <div
-                      className={`h-full transition-all ${
-                        status === 'open' ? 'bg-[#FF5A4F]' : 'bg-[#9A8984]'
-                      }`}
-                      style={{ width: `${status === 'full' ? 100 : progressPercent}%` }}
-                    />
-                  </div>
-                </div>
-              )}
+            {/* 核心活动介绍文案（首屏直接可见） */}
+            <div className="p-3 rounded-[8px] bg-[#FAF9F7] border border-[#ECE9E4]">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-xs font-extrabold text-[#171717] flex items-center gap-1.5">
+                  <span className="w-1 h-3.5 rounded-[2px] bg-[#FF5A4F]" />
+                  活动介绍
+                </span>
+                <span className="text-[11px] text-[#8C7E79]">首屏核心概览</span>
+              </div>
+              <p className="text-[13px] text-[#3B3330] leading-relaxed whitespace-pre-line">
+                {activity.description}
+              </p>
             </div>
 
-            {/* 时间、地点、主办方紧凑信息行 */}
-            <div className="mt-3.5 pt-3 border-t border-[#F0EEEC] space-y-2 text-xs text-[#514744]">
-              <div className="flex items-start gap-2">
-                <Clock className="w-3.5 h-3.5 text-[#FF5A4F] shrink-0 mt-0.5" />
-                <div>
+            {/* 核心要素：时间、地点、报名说明（名额/起止/参与要求） */}
+            <div className="space-y-2.5 pt-1">
+              <div className="flex items-start gap-2.5 text-xs">
+                <Clock className="w-4 h-4 text-[#FF5A4F] shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
                   <span className="text-[#8C7E79]">活动时间：</span>
-                  <span className="font-semibold text-[#171717]">
+                  <span className="font-bold text-[#171717]">
                     {formatDateTimeRange(activity.startTime, activity.endTime)}
                   </span>
                 </div>
               </div>
 
-              <div className="flex items-start gap-2">
-                <Calendar className="w-3.5 h-3.5 text-[#FF5A4F] shrink-0 mt-0.5" />
-                <div>
-                  <span className="text-[#8C7E79]">报名起止：</span>
-                  <span className="font-medium text-[#171717]">
+              <div className="flex items-start gap-2.5 text-xs">
+                <MapPin className="w-4 h-4 text-[#FF5A4F] shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[#8C7E79]">活动地点：</span>
+                  <span className="font-bold text-[#171717]">{activity.location}</span>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-2.5 text-xs">
+                <Building2 className="w-4 h-4 text-[#FF5A4F] shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-[#8C7E79]">主办单位：</span>
+                  <span className="font-medium text-[#171717]">{activity.organizer}</span>
+                </div>
+              </div>
+
+              {/* 报名说明区块（含报名起止时间、名额进度、参与要求与须知） */}
+              <div className="p-3 rounded-[8px] bg-[#F7F7F5] border border-[#ECE9E4] space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-bold text-[#171717] flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-[#FF5A4F]" />
+                    报名说明与参与要求
+                  </span>
+                  <span className="text-[#FF5A4F] font-bold tabular-nums">
+                    {status === 'open'
+                      ? `剩余 ${remainingSpots}/${activity.capacity} 名额`
+                      : `已报 ${activity.registeredCount}/${activity.capacity} 人`}
+                  </span>
+                </div>
+
+                {/* 进度条 */}
+                <div className="h-1.5 w-full rounded-[4px] bg-[#E6E3DF] overflow-hidden">
+                  <div
+                    className={`h-full transition-all ${
+                      status === 'open' ? 'bg-[#FF5A4F]' : 'bg-[#9A8984]'
+                    }`}
+                    style={{ width: `${status === 'full' ? 100 : progressPercent}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 text-xs text-[#514744]">
+                  <Calendar className="w-3.5 h-3.5 text-[#8C7E79] shrink-0" />
+                  <span>
+                    报名时间：
                     {formatDateTimeRange(
                       activity.registrationStartTime,
                       activity.registrationDeadline
                     )}
                   </span>
                 </div>
-              </div>
 
-              <div className="flex items-start gap-2">
-                <MapPin className="w-3.5 h-3.5 text-[#FF5A4F] shrink-0 mt-0.5" />
-                <div>
-                  <span className="text-[#8C7E79]">活动地点：</span>
-                  <span className="font-semibold text-[#171717]">{activity.location}</span>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2">
-                <Building2 className="w-3.5 h-3.5 text-[#FF5A4F] shrink-0 mt-0.5" />
-                <div>
-                  <span className="text-[#8C7E79]">主办单位：</span>
-                  <span className="font-medium text-[#171717]">{activity.organizer}</span>
-                </div>
+                <ul className="space-y-1 pt-1 border-t border-[#E6E3DF]/70 text-xs text-[#514744]">
+                  {activity.requirements.map((req, i) => (
+                    <li key={i} className="flex items-start gap-1.5">
+                      <span className="text-[#FF5A4F] font-bold">·</span>
+                      <span>{req}</span>
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </section>
 
-          {/* 板块 2：活动介绍（紧跟核心卡片之后，进入页面第一眼即可阅读完整介绍） */}
-          <section
-            aria-label="活动介绍"
-            data-testid="activity-intro-section"
-            className="bg-white rounded-[10px] p-4 border border-[#E6E3DF]"
-          >
-            <div className="flex items-center justify-between">
-              <h2 className="text-[16px] font-black text-[#171717]">活动介绍</h2>
-              <span className="text-xs text-[#8C7E79]">活动详情说明</span>
-            </div>
-            <p className="text-sm text-[#3B3330] leading-relaxed mt-2.5 whitespace-pre-line">
-              {activity.description}
-            </p>
-          </section>
-
-          {/* 板块 3：活动流程 */}
+          {/* 板块 2：活动流程与主办方详情 */}
           {activity.schedule && activity.schedule.length > 0 && (
             <section className="bg-white rounded-[10px] p-4 border border-[#E6E3DF]">
-              <h2 className="text-[16px] font-black text-[#171717]">活动流程</h2>
+              <h2 className="text-[16px] font-black text-[#171717]">活动流程安排</h2>
               <div className="mt-3 space-y-3">
                 {activity.schedule.map((step, idx) => (
                   <div key={idx} className="flex items-start gap-3">
@@ -571,90 +573,120 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                   </div>
                 ))}
               </div>
+
+              <div className="mt-3.5 pt-3 border-t border-[#F0EEEC] flex items-center justify-between text-xs text-[#8C7E79]">
+                <span>主办方：{activity.organizer}</span>
+                <span className="flex items-center gap-1">
+                  <Phone className="w-3 h-3" />
+                  {activity.contact}
+                </span>
+              </div>
             </section>
           )}
 
-          {/* 板块 4：活动地点与参与要求 */}
-          <section className="bg-white rounded-[10px] p-4 border border-[#E6E3DF] space-y-3.5">
-            <div>
-              <h2 className="text-[16px] font-black text-[#171717]">活动地点与要求</h2>
-              <div className="mt-2 p-2.5 rounded-[8px] bg-[#F7F7F5] border border-[#ECE9E4] flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0">
-                  <MapPin className="w-4 h-4 text-[#FF5A4F] shrink-0" />
-                  <span className="text-xs font-semibold text-[#171717] truncate">
-                    {activity.campus} · {activity.location}
+          {/* 板块 3：「立即报名」主操作区（位于「找搭子」模块之前） */}
+          <section
+            aria-label="活动报名主操作区"
+            data-testid="inline-registration-cta-section"
+            className="bg-white rounded-[10px] p-4 border border-[#E6E3DF] space-y-2.5"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-[16px] font-black text-[#171717]">活动报名通道</h2>
+                <p className="text-xs text-[#8C7E79] mt-0.5">
+                  点击下方按钮可选择「个人报名」或「组团报名（关联搭子）」
+                </p>
+              </div>
+              <span className="text-xs font-bold text-[#FF5A4F] tabular-nums">
+                {activity.registeredCount}/{activity.capacity}人
+              </span>
+            </div>
+
+            {activity.isRegistered ? (
+              <div className="flex items-center gap-2 pt-1">
+                <div className="flex-1 h-10 px-3 rounded-[8px] bg-[#FFF0ED] text-[#FF5A4F] text-xs font-bold flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>
+                    已完成
+                    {activity.registrationRecord?.registrationMode === 'group'
+                      ? '组团报名'
+                      : '个人报名'}
                   </span>
                 </div>
-                <span className="text-[11px] text-[#8C7E79] shrink-0">校内场地</span>
+                {status !== 'ended' && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelConfirmSheet(true)}
+                    className="h-10 px-3.5 rounded-[8px] bg-[#F7F7F5] border border-[#E6E3DF] text-[#514744] hover:text-[#FF5A4F] text-xs font-semibold"
+                  >
+                    取消报名
+                  </button>
+                )}
               </div>
-            </div>
-
-            <div className="pt-2.5 border-t border-[#F0EEEC]">
-              <p className="text-xs font-bold text-[#171717] mb-1.5">参与要求与须知</p>
-              <ul className="space-y-1.5 text-xs text-[#514744]">
-                {activity.requirements.map((req, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <span className="text-[#FF5A4F] font-bold">·</span>
-                    <span>{req}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ) : status === 'open' ? (
+              <button
+                type="button"
+                data-testid="btn-inline-register"
+                onClick={() => openRegisterModal('solo')}
+                className="w-full h-11 rounded-[8px] bg-[#FF5A4F] text-white font-bold text-sm flex items-center justify-center gap-2 transition-transform active:scale-[0.99]"
+              >
+                <span>立即报名（选择个人 / 组团报名）</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                disabled
+                className="w-full h-11 rounded-[8px] bg-[#EAE9E7] text-[#99938F] font-semibold text-sm cursor-not-allowed"
+              >
+                {statusLabel}
+              </button>
+            )}
           </section>
 
-          {/* 板块 5：主办方信息 */}
-          <section className="bg-white rounded-[10px] p-4 border border-[#E6E3DF]">
-            <h2 className="text-[16px] font-black text-[#171717]">主办方信息</h2>
-            <div className="mt-2.5 flex items-start gap-3">
-              <div className="w-10 h-10 rounded-[8px] bg-[#FFF0ED] text-[#FF5A4F] flex items-center justify-center font-bold text-sm shrink-0">
-                {activity.organizer.slice(0, 1)}
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-sm font-bold text-[#171717]">{activity.organizer}</h3>
-                <p className="text-xs text-[#514744] mt-1">{activity.organizerInfo}</p>
-                <div className="flex items-center gap-1.5 text-xs text-[#8C7E79] mt-2">
-                  <Phone className="w-3.5 h-3.5" />
-                  <span>咨询联系：{activity.contact}</span>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* 板块 6：报名后解锁的「同场组团 · 结伴同行」功能区（仅在已报名或底部次级位置呈现，不喧宾夺主） */}
+          {/* 板块 4：「找搭子」模块（严格移至「立即报名」按钮之后） */}
           <section
             ref={buddySectionRef}
-            aria-label="同场组团与搭子"
+            aria-label="找搭子与同场组团"
+            data-testid="buddy-section-after-register"
             className="bg-white rounded-[10px] p-4 border border-[#E6E3DF]"
           >
             <div className="flex items-center justify-between gap-2">
               <div>
                 <div className="flex items-center gap-1.5">
-                  <h2 className="text-[15px] font-bold text-[#171717]">
-                    {activity.isRegistered ? '已报名专属 · 同场组团结伴' : '报名后可加入同场组团'}
-                  </h2>
+                  <h2 className="text-[15px] font-bold text-[#171717]">找搭子 · 同场组团结伴</h2>
                   <span className="text-xs font-semibold text-[#FF5A4F] tabular-nums">
                     ({activityBuddies.length}组)
                   </span>
                 </div>
                 <p className="text-xs text-[#8C7E79] mt-0.5">
                   {activity.isRegistered
-                    ? '您已完成报名，可随时加入同场搭子小队或发起新结伴'
-                    : '点击下方「立即报名」时，可直接选择个人报名或组团报名'}
+                    ? '您已报名，可直接加入下方同场搭子小队或发起新组团'
+                    : '报名时可选择「组团报名（关联搭子）」一键加入以下小队'}
                 </p>
               </div>
-              {activity.isRegistered && status !== 'ended' && (
+              {status !== 'ended' && (
                 <button
                   type="button"
-                  onClick={() => setShowCreateBuddySheet(true)}
+                  onClick={() => {
+                    if (activity.isRegistered) {
+                      setShowCreateBuddySheet(true);
+                    } else if (status === 'open') {
+                      openRegisterModal('group');
+                    }
+                  }}
                   className="px-2.5 py-1.5 rounded-[6px] bg-[#FFF0ED] text-[#FF5A4F] text-xs font-bold flex items-center gap-1 shrink-0"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  <span>发起组团</span>
+                  <span>{activity.isRegistered ? '发起搭子' : '组团报名'}</span>
                 </button>
               )}
             </div>
 
-            {activity.isRegistered ? (
+            {activityBuddies.length === 0 ? (
+              <div className="mt-3 p-3.5 rounded-[8px] bg-[#F7F7F5] text-center">
+                <p className="text-xs text-[#514744]">本场活动暂无人发起搭子小队</p>
+              </div>
+            ) : (
               <div className="mt-3 space-y-2.5">
                 {activityBuddies.map((post) => {
                   const isFull = post.currentCount >= post.maxCount;
@@ -672,10 +704,10 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                             {post.authorName}
                           </span>
                           <span className="text-[11px] text-[#8C7E79] truncate">
-                            {post.authorGrade}
+                            {post.authorGrade} · {post.authorDepartment}
                           </span>
                         </div>
-                        <span className="text-[11px] font-semibold text-[#FF5A4F]">
+                        <span className="px-1.5 py-0.5 rounded-[4px] bg-[#FFF0ED] text-[11px] font-semibold text-[#FF5A4F] shrink-0">
                           {post.tag}
                         </span>
                       </div>
@@ -716,37 +748,31 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                           </button>
                         ) : isFull ? (
                           <span className="text-[#9A8984]">已满员</span>
-                        ) : (
+                        ) : activity.isRegistered ? (
                           <button
                             type="button"
                             onClick={() => onToggleJoinBuddy(post.id)}
                             className="px-3 py-1 rounded-[6px] bg-[#FF5A4F] text-white font-semibold"
                           >
-                            加入该组团
+                            加入搭子
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedExistingBuddyId(post.id);
+                              setGroupSubMode('join-existing');
+                              openRegisterModal('group');
+                            }}
+                            className="px-3 py-1 rounded-[6px] bg-[#FFF0ED] text-[#FF5A4F] font-bold"
+                          >
+                            关联该队组团报名
                           </button>
                         )}
                       </div>
                     </div>
                   );
                 })}
-              </div>
-            ) : (
-              <div className="mt-3 p-3 rounded-[8px] bg-[#F7F7F5] border border-[#ECE9E4] flex items-center justify-between gap-3">
-                <div className="text-xs text-[#514744]">
-                  当前已有 <strong className="text-[#171717]">{activityBuddies.length}</strong> 支同场组团小队，点击下方「立即报名」可选择<strong>个人报名</strong>或<strong>组团报名</strong>。
-                </div>
-                {status === 'open' && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setRegistrationMode('group');
-                      openRegisterModal();
-                    }}
-                    className="px-3 py-1.5 rounded-[6px] bg-[#FFF0ED] text-[#FF5A4F] text-xs font-bold shrink-0"
-                  >
-                    组团报名
-                  </button>
-                )}
               </div>
             )}
           </section>
@@ -774,7 +800,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
         </div>
       </div>
 
-      {/* 底部固定操作栏：收藏、分享、主要操作按钮 */}
+      {/* 底部固定操作栏：收藏、分享、立即报名 */}
       <div className="shrink-0 z-30 bg-white border-t border-[#E6E3DF] px-4 py-2.5 flex items-center gap-2.5">
         <button
           type="button"
@@ -803,18 +829,19 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
         {renderPrimaryActionButton()}
       </div>
 
-      {/* 报名弹窗 Sheet：第一步选择「个人报名」或「组团报名」，第二步确认信息 */}
+      {/* 点击报名按钮弹窗：选择「个人报名」或「组团报名（关联搭子）」 */}
       {showRegisterSheet && (
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="确认报名信息"
+          aria-label="选择报名方式"
+          data-testid="register-mode-dialog"
           className="fixed inset-0 z-50 bg-black/50 flex items-end justify-center"
         >
           <div className="w-full max-w-[430px] bg-white rounded-t-[14px] p-5 space-y-4 max-h-[88dvh] overflow-y-auto no-scrollbar">
             <div className="flex items-center justify-between border-b border-[#F0EEEC] pb-3">
               <div>
-                <h3 className="text-[18px] font-black text-[#171717]">选择报名方式并确认</h3>
+                <h3 className="text-[18px] font-black text-[#171717]">选择报名方式</h3>
                 <p className="text-xs text-[#8C7E79] mt-0.5">
                   {activity.title} · 剩余 {remainingSpots} 个名额
                 </p>
@@ -830,18 +857,19 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
             </div>
 
             <form onSubmit={handleConfirmRegistration} className="space-y-3.5">
-              {/* 1. 选择报名模式：个人报名 vs 组团报名 */}
+              {/* 1. 选择报名模式：个人报名 vs 组团报名（关联搭子） */}
               <div>
                 <label className="block text-xs font-bold text-[#171717] mb-2">
-                  1. 选择报名方式 <span className="text-[#FF5A4F]">*</span>
+                  1. 请选择报名类型 <span className="text-[#FF5A4F]">*</span>
                 </label>
                 <div className="grid grid-cols-2 gap-2.5">
                   <button
                     type="button"
+                    data-testid="mode-solo-btn"
                     onClick={() => setRegistrationMode('solo')}
                     className={`p-3 rounded-[8px] border text-left transition-all ${
                       registrationMode === 'solo'
-                        ? 'border-[#FF5A4F] bg-[#FFF0ED]/60'
+                        ? 'border-[#FF5A4F] bg-[#FFF0ED]/70'
                         : 'border-[#E6E3DF] bg-[#F7F7F5]'
                     }`}
                   >
@@ -854,16 +882,17 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                       />
                     </div>
                     <p className="text-[11px] text-[#514744] mt-1">
-                      独立参加活动，直接锁定个人入场名额
+                      单人直接报名，快速锁定个人入场名额
                     </p>
                   </button>
 
                   <button
                     type="button"
+                    data-testid="mode-group-btn"
                     onClick={() => setRegistrationMode('group')}
                     className={`p-3 rounded-[8px] border text-left transition-all ${
                       registrationMode === 'group'
-                        ? 'border-[#FF5A4F] bg-[#FFF0ED]/60'
+                        ? 'border-[#FF5A4F] bg-[#FFF0ED]/70'
                         : 'border-[#E6E3DF] bg-[#F7F7F5]'
                     }`}
                   >
@@ -876,15 +905,25 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                       />
                     </div>
                     <p className="text-[11px] text-[#514744] mt-1">
-                      报名同时加入同场搭子小队或发起新组团
+                      关联搭子小队结伴同行，或发起新组团
                     </p>
                   </button>
                 </div>
               </div>
 
-              {/* 如果选择「组团报名」，展开组团选项 */}
+              {/* 如果选择「组团报名（关联搭子）」，展开搭子关联面板 */}
               {registrationMode === 'group' && (
-                <div className="p-3.5 rounded-[8px] bg-[#F7F7F5] border border-[#E6E3DF] space-y-3">
+                <div
+                  data-testid="group-buddy-association-panel"
+                  className="p-3.5 rounded-[8px] bg-[#F7F7F5] border border-[#E6E3DF] space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-[#171717]">关联同场搭子小队</span>
+                    <span className="text-[11px] text-[#FF5A4F] font-semibold">
+                      组团报名专属
+                    </span>
+                  </div>
+
                   <div className="flex items-center gap-1.5">
                     <button
                       type="button"
@@ -895,7 +934,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                           : 'bg-white text-[#514744] border border-[#E6E3DF]'
                       }`}
                     >
-                      加入已有同场小队 ({openActivityBuddies.length})
+                      关联已有搭子 ({openActivityBuddies.length})
                     </button>
                     <button
                       type="button"
@@ -906,7 +945,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                           : 'bg-white text-[#514744] border border-[#E6E3DF]'
                       }`}
                     >
-                      发起新组团招募
+                      发起新搭子组团
                     </button>
                   </div>
 
@@ -948,7 +987,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                       </div>
                     ) : (
                       <p className="text-xs text-[#8C7E79] py-2 text-center">
-                        暂无空缺小队，请点击上方「发起新组团招募」创建你的队伍
+                        暂无空缺小队，请点击上方「发起新搭子组团」创建你的队伍
                       </p>
                     )
                   ) : (
@@ -1090,9 +1129,10 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
                 </button>
                 <button
                   type="submit"
+                  data-testid="btn-confirm-registration"
                   className="flex-1 h-11 rounded-[8px] bg-[#FF5A4F] text-white font-bold text-sm"
                 >
-                  {registrationMode === 'group' ? '确认组团报名' : '确认个人报名'}
+                  {registrationMode === 'group' ? '确认组团报名（关联搭子）' : '确认个人报名'}
                 </button>
               </div>
             </form>
@@ -1136,6 +1176,7 @@ export const ActivityDetailPage: React.FC<ActivityDetailPageProps> = ({
               </button>
               <button
                 type="button"
+                data-testid="btn-confirm-cancel-registration"
                 onClick={handleConfirmCancelRegistration}
                 className="flex-1 h-11 rounded-[8px] bg-[#FF5A4F] text-white font-bold text-sm"
               >
