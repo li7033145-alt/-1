@@ -190,18 +190,20 @@ export const HomePage: React.FC<HomePageProps> = ({
 
   return (
     <div className="pb-8 bg-[#F4F2EE]">
-      {/* 1. 顶部导航栏：品牌 + 学校切换 + 搜索与账号 + 校区二级切换 */}
+      {/* 1. 顶部导航栏：品牌 + 位置 + 账号 / 独立搜索栏 / 校区二级切换 */}
       <header className="px-4 pt-3 pb-3 bg-white border-b border-[#ECE9E4]">
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[22px] font-black tracking-tight text-[#171717] leading-none shrink-0">
+        {/* 第一行：品牌标识 + 校园位置选择（左侧）与账号入口（右侧），留足呼吸间距 */}
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2.5 min-w-0 flex-1">
+            <span className="text-[21px] font-black tracking-tight text-[#171717] leading-none shrink-0">
               一场
             </span>
+            <span className="w-px h-3.5 bg-[#E6E3DF] shrink-0" aria-hidden="true" />
             <button
               type="button"
               onClick={onOpenCampusSelector}
               aria-label={`当前学校：${currentCampus}，点击切换校园`}
-              className="flex items-center gap-1 text-xs font-bold text-[#171717] bg-[#F7F6F3] hover:bg-[#FFF0ED] hover:text-[#FF5A4F] px-2.5 py-1.5 rounded-[8px] border border-[#E6E3DF] transition-colors max-w-[178px]"
+              className="flex items-center gap-1 text-xs font-bold text-[#171717] hover:text-[#FF5A4F] py-1 rounded-[6px] transition-colors min-w-0"
             >
               <MapPin className="w-3.5 h-3.5 text-[#FF5A4F] shrink-0" />
               <span className="truncate">{currentCampus}</span>
@@ -209,32 +211,36 @@ export const HomePage: React.FC<HomePageProps> = ({
             </button>
           </div>
 
-          <div className="flex items-center gap-1.5 shrink-0">
+          {onOpenAuthModal && (
             <button
               type="button"
-              onClick={() => onJumpToCategory('全部', true)}
-              aria-label="搜索感兴趣的校园活动"
-              className="h-8 px-2.5 rounded-[8px] bg-[#F7F6F3] hover:bg-[#ECE9E4] border border-[#E6E3DF] flex items-center gap-1 text-xs font-medium text-[#514744] transition-colors"
+              onClick={onOpenAuthModal}
+              aria-label="登录或切换账号"
+              className="h-8 px-2.5 rounded-[8px] bg-[#FFF0ED] text-[#FF5A4F] border border-[#FF5A4F]/25 flex items-center gap-1 text-xs font-bold transition-colors shrink-0 whitespace-nowrap"
             >
-              <Search className="w-3.5 h-3.5 text-[#9A8984]" />
-              <span>搜索</span>
+              <UserCheck className="w-3.5 h-3.5" />
+              <span>{userProfile.nickname}</span>
             </button>
-
-            {onOpenAuthModal && (
-              <button
-                type="button"
-                onClick={onOpenAuthModal}
-                aria-label="登录或切换账号"
-                className="h-8 px-2.5 rounded-[8px] bg-[#FFF0ED] text-[#FF5A4F] border border-[#FF5A4F]/25 flex items-center gap-1 text-xs font-bold transition-colors"
-              >
-                <UserCheck className="w-3.5 h-3.5" />
-                <span>{userProfile.nickname}</span>
-              </button>
-            )}
-          </div>
+          )}
         </div>
 
-        {/* 二级校内校区切换栏 */}
+        {/* 第二行：独立全宽搜索入口，彻底与顶部位置信息拉开层次 */}
+        <button
+          type="button"
+          onClick={() => onJumpToCategory('全部', true)}
+          aria-label="搜索感兴趣的校园活动"
+          className="mt-2.5 w-full h-9 px-3 rounded-[8px] bg-[#F7F6F3] hover:bg-[#EFECE6] border border-[#E6E3DF] flex items-center justify-between gap-2 text-xs transition-colors"
+        >
+          <span className="flex items-center gap-2 text-[#8C7E79] min-w-0">
+            <Search className="w-3.5 h-3.5 text-[#9A8984] shrink-0" />
+            <span className="truncate">搜索校园活动、讲座、比赛或社团</span>
+          </span>
+          <span className="text-[11px] font-semibold text-[#514744] shrink-0 whitespace-nowrap">
+            搜索
+          </span>
+        </button>
+
+        {/* 第三行：二级校内校区切换栏 */}
         {subCampusOptions.length > 1 && (
           <div
             role="tablist"
